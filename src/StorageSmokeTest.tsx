@@ -56,7 +56,7 @@ export default function StorageSmokeTest() {
       </p>
       <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
         <button onClick={seed}>Add Sample Session + Entry</button>
-        <button
+        <button 
           onClick={async () => {
             await clearAll()
             await refresh()
