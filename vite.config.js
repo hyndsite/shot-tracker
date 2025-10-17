@@ -25,7 +25,11 @@ export default defineConfig({
           }
         ]
       },
-      workbox: { globPatterns: ['**/*.{js,css,html,ico,png,svg}'] },
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+        clientsClaim: true,
+        skipWaiting: true   // 👈 make new SW take control immediately
+      },
       devOptions: { enabled: true }
     })
   ]
