@@ -1,51 +1,41 @@
 import { supabase, getUser } from './supabase'
-import { getSessions, getEntries, getMarkers, getGoals, addEntries, addSession, addMarker, upsertGoal } from './db'
+import {
+  getSessions, getEntries, getMarkers,
+  addEntries, addSession, addMarker,
+  getGoalSets, getGoalItems, upsertGoalSet, upsertGoalItem
+} from './db'
 
 export async function pushAllLocal() {
   const user = await getUser()
   if (!user) return { ok:false, reason:'no-user' }
 
-  const [sessions, entries, markers, goals] = await Promise.all([
-    getSessions(), getEntries(), getMarkers(), getGoals()
+  const [sessions, entries, markers, sets, items] = await Promise.all([
+    getSessions(), getEntries(), getMarkers(), getGoalSets(), getGoalItems()
   ])
 
-  // Upsert via insert with 'on conflict' (client lib will do it row-by-row)
-  // Sessions
   for (const s of sessions) {
-    await supabase.from('sessions').upsert({
-      id: s.id, user_id: user.id, date_iso: s.dateISO, notes: s.notes ?? null
-    })
+    await supabase.from('sessions').upsert({ id:s.id, user_id:user.id, date_iso:s.dateISO, notes:s.notes ?? null })
   }
-
-  // Entries
   for (const e of entries) {
     await supabase.from('entries').upsert({
-      id: e.id,
-      user_id: user.id,
-      session_id: e.sessionId,
-      ts: e.ts,
-      zone_id: e.zoneId,
-      is_three: !!e.isThree,
-      shot_type: e.shotType,
-      subtype: e.subtype ?? null,
-      pressured: !!e.pressured,
-      attempts: e.attempts,
-      makes: e.makes,
-      marker_id: e.markerId ?? null
+      id:e.id, user_id:user.id, session_id:e.sessionId, ts:e.ts,
+      zone_id:e.zoneId, is_three:!!e.isThree, shot_type:e.shotType, subtype:e.subtype ?? null,
+      pressured:!!e.pressured, attempts:e.attempts, makes:e.makes, marker_id:e.markerId ?? null
     })
   }
-
-  // Markers
   for (const m of markers) {
-    await supabase.from('markers').upsert({
-      id: m.id, user_id: user.id, session_id: m.sessionId, ts: m.ts, label: m.label
-    })
+    await supabase.from('markers').upsert({ id:m.id, user_id:user.id, session_id:m.sessionId, ts:m.ts, label:m.label })
   }
 
-  // Goals (1 row per type)
-  for (const g of goals) {
-    await supabase.from('goals').upsert({
-      type: g.type, user_id: user.id, target: g.target
+  for (const gs of sets) {
+    await supabase.from('goal_sets').upsert({
+      id: gs.id, user_id:user.id, name: gs.name, milestone_date: gs.milestoneDate
+    })
+  }
+  for (const gi of items) {
+    await supabase.from('goal_items').upsert({
+      id: gi.id, user_id:user.id, set_id: gi.setId, type: gi.type, target: gi.target,
+      comparison: gi.comparison, filter_json: gi.filter
     })
   }
 
@@ -56,62 +46,45 @@ export async function pullAllRemote() {
   const user = await getUser()
   if (!user) return { ok:false, reason:'no-user' }
 
-  // Pull everything and merge (dedupe by id)
-  const [sRes, eRes, mRes, gRes] = await Promise.all([
+  const [sRes, eRes, mRes, gsRes, giRes] = await Promise.all([
     supabase.from('sessions').select('*').order('created_at', { ascending:false }),
     supabase.from('entries').select('*').order('created_at', { ascending:false }),
     supabase.from('markers').select('*').order('created_at', { ascending:false }),
-    supabase.from('goals').select('*')
+    supabase.from('goal_sets').select('*').order('created_at', { ascending:false }),
+    supabase.from('goal_items').select('*').order('created_at', { ascending:false })
   ])
+
   const sessions = sRes.data ?? []
   const entries  = eRes.data ?? []
   const markers  = mRes.data ?? []
-  const goals    = gRes.data ?? []
+  const sets     = gsRes.data ?? []
+  const items    = giRes.data ?? []
 
-  // Merge into local if missing
-  // (Append-only makes this straightforward; no edits to resolve)
-  const localSessionIds = new Set((await getSessions()).map(s => s.id))
-  for (const s of sessions) {
-    if (!localSessionIds.has(s.id)) {
-      await addSession({ id: s.id, dateISO: s.date_iso, notes: s.notes ?? '' })
-    }
-  }
+  // Sessions / Entries / Markers (append if missing)
+  const localSessions = new Map((await getSessions()).map(s => [s.id, s]))
+  for (const s of sessions) if (!localSessions.has(s.id)) await addSession({ id:s.id, dateISO:s.date_iso, notes:s.notes ?? '' })
 
-  const localEntryIds = new Set((await getEntries()).map(e => e.id))
-  const newEntries = []
-  for (const e of entries) {
-    if (!localEntryIds.has(e.id)) {
-      newEntries.push({
-        id: e.id,
-        sessionId: e.session_id,
-        ts: e.ts,
-        zoneId: e.zone_id,
-        isThree: !!e.is_three,
-        shotType: e.shot_type,
-        subtype: e.subtype ?? 'none',
-        pressured: !!e.pressured,
-        attempts: e.attempts,
-        makes: e.makes,
-        markerId: e.marker_id ?? null
-      })
-    }
-  }
-  if (newEntries.length) await addEntries(newEntries)
+  const localEntries = new Map((await getEntries()).map(e => [e.id, e]))
+  const newEs = []
+  for (const e of entries) if (!localEntries.has(e.id)) newEs.push({
+    id:e.id, sessionId:e.session_id, ts:e.ts, zoneId:e.zone_id, isThree:!!e.is_three,
+    shotType:e.shot_type, subtype:e.subtype ?? 'none', pressured:!!e.pressured,
+    attempts:e.attempts, makes:e.makes, markerId:e.marker_id ?? null
+  })
+  if (newEs.length) await addEntries(newEs)
 
-  const localMarkerIds = new Set((await getMarkers()).map(m => m.id))
-  for (const m of markers) {
-    if (!localMarkerIds.has(m.id)) {
-      await addMarker({ id: m.id, sessionId: m.session_id, ts: m.ts, label: m.label })
-    }
-  }
+  const localMarkers = new Map((await getMarkers()).map(m => [m.id, m]))
+  for (const m of markers) if (!localMarkers.has(m.id)) await addMarker({ id:m.id, sessionId:m.session_id, ts:m.ts, label:m.label })
 
-  const localGoals = await getGoals()
-  const have = new Set(localGoals.map(g => g.type))
-  for (const g of goals) {
-    if (!have.has(g.type)) {
-      await upsertGoal({ type: g.type, target: Number(g.target) })
-    }
-  }
+  // Goal sets/items
+  const localSets = new Map((await getGoalSets()).map(gs => [gs.id, gs]))
+  for (const gs of sets) if (!localSets.has(gs.id)) await upsertGoalSet({ id:gs.id, name:gs.name, milestoneDate:gs.milestone_date })
+
+  const localItems = new Map((await getGoalItems()).map(gi => [gi.id, gi]))
+  for (const gi of items) if (!localItems.has(gi.id)) await upsertGoalItem({
+    id: gi.id, setId: gi.set_id, type: gi.type, target: Number(gi.target),
+    comparison: gi.comparison, filter: gi.filter_json
+  })
 
   return { ok:true }
 }

@@ -1,12 +1,11 @@
 import { useState } from 'react'
 import BatchWizard from './BatchWizard'
 import YTDSummary from './YTDSummary'
-import Goals from './Goals'
+import GoalsManager from './GoalsManager'
 import Heatmap from './Heatmap'
 import Progression from './Progression'
 import Account from './Account'
 import PWAUpdateBanner from './PWAUpdateBanner'
-import CourtHeatmap from './CourtHeatmap'
 
 export default function App() {
   const [tab, setTab] = useState('log')
@@ -33,18 +32,16 @@ export default function App() {
         {tabBtn('heat','Heatmap')}
         {tabBtn('prog','Progress')}
         {tabBtn('account','Account')}
-        {tabBtn('shotchart','Shot Chart')}
       </nav>
 
       <PWAUpdateBanner />
 
       {tab === 'log'  && <BatchWizard />}
       {tab === 'ytd'  && <YTDSummary />}
-      {tab === 'goals'&& <Goals />}
+      {tab === 'goals'&& <GoalsManager />}
       {tab === 'heat' && <Heatmap />}
       {tab === 'prog' && <Progression />}
       {tab === 'account' && <Account />}
-      {tab === 'shotchart' && <CourtHeatmap />}
     </div>
   )
 }
