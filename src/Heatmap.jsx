@@ -10,10 +10,8 @@ const GRID = [
   ['short_left','paint_restricted','free_throw','paint_restricted','short_right']
 ]
 
-function statColor(val, kind, maxAttempts=1) {
-  // kind = 'density' (0..1 of attempts/max) or 'accuracy' (0..1 FG or eFG)
+function statColor(val) {
   const t = Math.max(0, Math.min(1, val))
-  // blue → green gradient
   const g = Math.round(200 * t)
   const b = Math.round(200 * (1 - t))
   return `rgb(20, ${g}, ${b})`
@@ -21,43 +19,39 @@ function statColor(val, kind, maxAttempts=1) {
 
 export default function Heatmap() {
   const [entries, setEntries] = useState([])
-  const [mode, setMode] = useState('density') // 'density' | 'accuracy' | 'efg'
-  const [range, setRange] = useState('30') // 7 | 30 | 365 | all
+  const [mode, setMode] = useState('density') // density | accuracy | efg
+  const [range, setRange] = useState('30')     // 7 | 30 | 365 | all
 
   useEffect(() => { (async () => setEntries(await getEntries()))() }, [])
 
   const filtered = useMemo(() => {
     if (range === 'all') return entries
     const days = Number(range)
-    const start = dayjs().subtract(days-1,'day').startOf('day')
+    const start = dayjs().subtract(days - 1, 'day').startOf('day')
     return entries.filter(e => dayjs(e.ts).isAfter(start))
   }, [entries, range])
 
-  // aggregate by zone
   const zone = new Map()
   for (const z of ZONES) zone.set(z.id, { attempts:0, makes:0, threesMade:0 })
   for (const e of filtered) {
-    if (!zone.has(e.zoneId)) zone.set(e.zoneId, { attempts:0, makes:0, threesMade:0 })
-    const t = zone.get(e.zoneId)
+    const t = zone.get(e.zoneId) || { attempts:0, makes:0, threesMade:0 }
     t.attempts += e.attempts
     t.makes    += e.makes
     if (e.isThree) t.threesMade += e.makes
+    zone.set(e.zoneId, t)
   }
 
   const maxAtt = Math.max(1, ...Array.from(zone.values()).map(v => v.attempts))
 
   const cellStat = (zid) => {
     const t = zone.get(zid) || { attempts:0, makes:0, threesMade:0 }
-    if (mode === 'density') {
-      return { label:`${t.attempts} att`, ratio: t.attempts/maxAtt }
-    }
+    if (mode === 'density') return { label: `${t.attempts} att`, ratio: t.attempts / maxAtt }
     if (mode === 'accuracy') {
-      const r = t.attempts ? t.makes/t.attempts : 0
-      return { label: t.attempts ? `${(r*100).toFixed(0)}%` : '—', ratio: r }
+      const r = t.attempts ? t.makes / t.attempts : 0
+      return { label: t.attempts ? `${(r * 100).toFixed(0)}%` : '—', ratio: r }
     }
-    // efg
     const r = t.attempts ? efg(t) : 0
-    return { label: t.attempts ? `${(r*100).toFixed(0)}% eFG` : '—', ratio: r }
+    return { label: t.attempts ? `${(r * 100).toFixed(0)}% eFG` : '—', ratio: r }
   }
 
   return (
@@ -65,14 +59,14 @@ export default function Heatmap() {
       <h2>Shot Map (Zones)</h2>
 
       <div style={{ display:'flex', gap:8, margin:'8px 0' }}>
-        <label>Mode:{" "}
+        <label>Mode:{' '}
           <select value={mode} onChange={e=>setMode(e.target.value)}>
             <option value="density">Attempt Density</option>
             <option value="accuracy">FG% (per zone)</option>
             <option value="efg">eFG% (per zone)</option>
           </select>
         </label>
-        <label>Range:{" "}
+        <label>Range:{' '}
           <select value={range} onChange={e=>setRange(e.target.value)}>
             <option value="7">Last 7 days</option>
             <option value="30">Last 30 days</option>
@@ -83,26 +77,15 @@ export default function Heatmap() {
       </div>
 
       <div style={{ border:'1px solid #e5e7eb', borderRadius:12, padding:12 }}>
-        <div style={{
-          display:'grid',
-          gridTemplateColumns:'repeat(5,1fr)',
-          gap:8
-        }}>
-          {GRID.flat().map((zid, idx) => {
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(5,1fr)', gap:8 }}>
+          {GRID.flat().map((zid, i) => {
             const meta = ZONES.find(z => z.id === zid)
             const { label, ratio } = cellStat(zid)
-            const color = statColor(ratio, mode)
+            const color = statColor(ratio)
             return (
-              <div key={idx} style={{
-                background: color,
-                color:'white',
-                borderRadius:10,
-                padding:'16px 8px',
-                textAlign:'center',
-                minHeight:64,
-                display:'flex',
-                flexDirection:'column',
-                justifyContent:'center'
+              <div key={i} style={{
+                background: color, color:'white', borderRadius:10, padding:'16px 8px',
+                textAlign:'center', minHeight:64, display:'flex', flexDirection:'column', justifyContent:'center'
               }}>
                 <div style={{ fontWeight:700, fontSize:13 }}>{meta ? meta.label : zid}</div>
                 <div style={{ fontSize:12, opacity:0.9 }}>{label}</div>
@@ -111,7 +94,7 @@ export default function Heatmap() {
           })}
         </div>
         <div style={{ fontSize:12, color:'#475569', marginTop:8 }}>
-          * Layout is a simple zone grid (not exact court geometry). Free Throw shown center-top row.
+          * Grid approximates zones for speed; not literal court geometry.
         </div>
       </div>
     </div>

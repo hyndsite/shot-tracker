@@ -2,20 +2,19 @@ import { useEffect, useMemo, useState } from 'react'
 import dayjs from 'dayjs'
 import { getEntries } from './lib/db'
 import { efg } from './types'
-import {
-  ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid
-} from 'recharts'
+import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts'
 
 export default function Progression() {
   const [entries, setEntries] = useState([])
-  const [span, setSpan] = useState('60') // days: 30, 60, 180, all
+  const [span, setSpan] = useState('60') // 30 | 60 | 180 | all
 
   useEffect(() => { (async () => setEntries(await getEntries()))() }, [])
 
   const data = useMemo(() => {
-    // bucket by day
     const map = new Map()
-    const minDate = span === 'all' ? dayjs('2000-01-01') : dayjs().subtract(Number(span)-1,'day').startOf('day')
+    const minDate = span === 'all'
+      ? dayjs('2000-01-01')
+      : dayjs().subtract(Number(span) - 1, 'day').startOf('day')
     for (const e of entries) {
       const d = dayjs(e.ts).format('YYYY-MM-DD')
       if (dayjs(d).isBefore(minDate)) continue
@@ -25,17 +24,16 @@ export default function Progression() {
       t.makes    += e.makes
       if (e.isThree) t.threesMade += e.makes
     }
-    const rows = Array.from(map.entries())
+    return Array.from(map.entries())
       .sort((a,b) => a[0] < b[0] ? -1 : 1)
-      .map(([d,t]) => ({ date:d, efg: +(efg(t)*100).toFixed(1), att:t.attempts }))
-    return rows
+      .map(([d,t]) => ({ date:d, efg:+(efg(t)*100).toFixed(1), att:t.attempts }))
   }, [entries, span])
 
   return (
     <div style={{ padding:16, fontFamily:'system-ui, -apple-system, Segoe UI, Roboto', maxWidth:900, margin:'0 auto' }}>
       <h2>Progression</h2>
       <div style={{ display:'flex', gap:8, margin:'8px 0' }}>
-        <label>Range:{" "}
+        <label>Range:{' '}
           <select value={span} onChange={e=>setSpan(e.target.value)}>
             <option value="30">30 days</option>
             <option value="60">60 days</option>
@@ -52,12 +50,12 @@ export default function Progression() {
             <XAxis dataKey="date" tick={{ fontSize:12 }} />
             <YAxis domain={[0, 100]} tick={{ fontSize:12 }} />
             <Tooltip />
-            <Line type="monotone" dataKey="efg" stroke="#22c55e" dot={false} />
+            <Line type="monotone" dataKey="efg" dot={false} />
           </LineChart>
         </ResponsiveContainer>
       </div>
       <div style={{ fontSize:12, color:'#475569', marginTop:6 }}>
-        Line shows daily eFG%. Consider adding a secondary bar/line for attempts later.
+        Line shows daily eFG%; we can add attempts overlay later.
       </div>
     </div>
   )
