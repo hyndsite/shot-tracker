@@ -4,6 +4,7 @@ import YTDSummary from './YTDSummary'
 import Goals from './Goals'
 import Heatmap from './Heatmap'
 import Progression from './Progression'
+import Account from './Account'
 import PWAUpdateBanner from './PWAUpdateBanner'
 
 export default function App() {
@@ -30,6 +31,7 @@ export default function App() {
         {tabBtn('goals','Goals')}
         {tabBtn('heat','Heatmap')}
         {tabBtn('prog','Progress')}
+        {tabBtn('account','Account')}
       </nav>
 
       <PWAUpdateBanner />
@@ -39,6 +41,7 @@ export default function App() {
       {tab === 'goals'&& <Goals />}
       {tab === 'heat' && <Heatmap />}
       {tab === 'prog' && <Progression />}
+      {tab === 'account' && <Account />}
     </div>
   )
 }

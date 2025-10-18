@@ -7,6 +7,7 @@ import {
 import { ZONES, SHOT_TYPES, SUBTYPES } from './constants'
 import { efg } from './types'
 import LiveLiteBar from './LiveLiteBar'
+import { pushAllLocal } from './lib/sync'
 
 function LabeledRow({ label, children }) {
   return (
@@ -104,6 +105,7 @@ export default function BatchWizard() {
     const m = { id: crypto.randomUUID(), sessionId: sid, ts: Date.now(), label: 'Set' }
     await addMarker(m)
     setMarkers(prev => [m, ...prev])
+    await pushAllLocal()
   }
   const onPlusAttempts = () => setAttempts(a => Number(a) + 10)
   const onPlusMake     = () => setMakes(m => Number(m) + 1)
@@ -124,6 +126,8 @@ export default function BatchWizard() {
       makes: Number(makes)
     }
     await addEntries([newEntry])
+    await pushAllLocal()
+
     setEntries(prev => [newEntry, ...prev])
     if (andReset) { setAttempts(10); setMakes(0) }
   }
