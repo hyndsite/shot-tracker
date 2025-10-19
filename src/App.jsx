@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react"
+import BottomNav from "./components/BottomNav"
 import SessionLog from "./screens/SessionLog"
 import YTDSummary from "./YTDSummary"
 import GoalsManager from "./GoalsManager"
@@ -6,7 +7,6 @@ import Heatmap from "./Heatmap"
 import Progression from "./Progression"
 import Account from "./Account"
 import PWAUpdateBanner from "./PWAUpdateBanner"
-import BottomNav from "./components/BottomNav"
 
 export default function App() {
   const [tab, setTab] = useState("log")
