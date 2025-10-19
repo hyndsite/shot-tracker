@@ -146,7 +146,7 @@ export default function SessionLog() {
             <select
               value={activeSessionId || ''}
               onChange={(e)=>switchSession(e.target.value || null)}
-              className="border border-slate-300 rounded-md px-2 py-1"
+              className="w-full max-w-xs border border-slate-300 bg-white text-slate-900 rounded-md px-2 py-1"
             >
               <option value="">— none —</option>
               {sessionsSorted.map(s => (
@@ -179,14 +179,14 @@ export default function SessionLog() {
       <div className="bg-white border border-slate-200 rounded-xl p-4">
         <FieldRow label="Zone">
           <select value={zoneId} onChange={e=>setZoneId(e.target.value)}
-                  className="w-full max-w-xs border border-slate-300 rounded-md px-2 py-1">
+                  className="w-full max-w-xs border border-slate-300 bg-white text-slate-900 rounded-md px-2 py-1">
             {ZONES.map(z => <option key={z.id} value={z.id}>{z.label}</option>)}
           </select>
         </FieldRow>
 
         <FieldRow label="Shot Type">
           <select value={shotType} onChange={e=>setShotType(e.target.value)}
-                  className="w-full max-w-xs border border-slate-300 rounded-md px-2 py-1">
+                  className="w-full max-w-xs border border-slate-300 bg-white text-slate-900 rounded-md px-2 py-1">
             {SHOT_TYPES.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
           </select>
         </FieldRow>
@@ -194,7 +194,7 @@ export default function SessionLog() {
         {shotType === 'off_dribble' && (
           <FieldRow label="Subtype">
             <select value={subtype} onChange={e=>setSubtype(e.target.value)}
-                    className="w-full max-w-xs border border-slate-300 rounded-md px-2 py-1">
+                    className="w-full max-w-xs border border-slate-300 bg-white text-slate-900 rounded-md px-2 py-1">
               {SUBTYPES.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
             </select>
           </FieldRow>
@@ -237,7 +237,7 @@ export default function SessionLog() {
             Save & Add Another
           </button>
           <button onClick={() => addBatch(false)}
-                  className="px-4 py-2 rounded-lg bg-slate-900 text-white text-sm font-semibold hover:bg-slate-800">
+                  className="px-4 py-2 rounded-lg bg-white text-slate-900 border border-slate-300 text-sm font-semibold hover:bg-slate-50">
             Save
           </button>
           <button onClick={onMarkSet}
@@ -290,11 +290,11 @@ export default function SessionLog() {
       <div className="fixed bottom-3 left-0 right-0 flex justify-center px-3">
         <div className="w-full max-w-3xl rounded-2xl shadow-lg border border-slate-200 bg-white p-3 flex items-center gap-2">
           <button onClick={onPlusAttempts}
-                  className="flex-1 py-2 rounded-lg bg-slate-100 text-slate-900 text-sm font-semibold hover:bg-slate-200">
+                  className="px-3 py-1.5 rounded-md bg-white text-slate-900 border border-slate-300 text-sm hover:bg-slate-50">
             +10 Attempts
           </button>
           <button onClick={onPlusMake}
-                  className="flex-1 py-2 rounded-lg bg-slate-900 text-white text-sm font-semibold hover:bg-slate-800">
+                  className="px-3 py-1.5 rounded-md bg-white text-slate-900 border border-slate-300 text-sm hover:bg-slate-50">
             +Make
           </button>
           <button onClick={onMarkSet}
