@@ -1,47 +1,40 @@
-import { useState } from 'react'
-import YTDSummary from './YTDSummary'
-import GoalsManager from './GoalsManager'
-import Heatmap from './Heatmap'
-import Progression from './Progression'
-import Account from './Account'
-import PWAUpdateBanner from './PWAUpdateBanner'
-import SessionLog from './screens/SessionLog'
+import { useState, useEffect } from "react"
+import BottomNav from "./components/BottomNav"
+import SessionLog from "./screens/SessionLog"
+import YTDSummary from "./YTDSummary"
+import GoalsManager from "./GoalsManager"
+import Heatmap from "./Heatmap"
+import Progression from "./Progression"
+import Account from "./Account"
+import PWAUpdateBanner from "./PWAUpdateBanner"
 
 export default function App() {
-  const [tab, setTab] = useState('log')
-  const tabBtn = (key, label) => (
-    <button
-      key={key}
-      onClick={()=>setTab(key)}
-      style={{
-        padding:'8px 12px', borderRadius:8, marginRight:8,
-        background: tab===key ? '#22c55e' : 'white',
-        color: tab===key ? 'white':'#0f172a', border:'none'
-      }}
-    >
-      {label}
-    </button>
-  )
+  const [tab, setTab] = useState("log")
+
+  useEffect(() => {
+    const t = localStorage.getItem("est.activeTab")
+    if (t) setTab(t)
+  }, [])
+  useEffect(() => {
+    localStorage.setItem("est.activeTab", tab)
+  }, [tab])
 
   return (
-    <div className="font-sans bg-slate-50 min-h-screen">
-      <nav style={{ position:'sticky', top:0, zIndex:10, background:'#0f172a', color:'white', padding:'10px 12px', display:'flex', flexWrap:'wrap' }}>
-        {tabBtn('log','Log')}
-        {tabBtn('ytd','YTD')}
-        {tabBtn('goals','Goals')}
-        {tabBtn('heat','Heatmap')}
-        {tabBtn('prog','Progress')}
-        {tabBtn('account','Account')}
-      </nav>
-
+    <div className="font-sans bg-slate-50 min-h-screen pb-16"> 
       <PWAUpdateBanner />
 
-      {tab === 'log'  && <SessionLog />}
-      {tab === 'ytd'  && <YTDSummary />}
-      {tab === 'goals'&& <GoalsManager />}
-      {tab === 'heat' && <Heatmap />}
-      {tab === 'prog' && <Progression />}
-      {tab === 'account' && <Account />}
+      {/* Main content area */}
+      <main className="mx-auto max-w-3xl px-3 sm:px-4 pt-3 pb-20">
+        {tab === "log" && <SessionLog />}
+        {tab === "ytd" && <YTDSummary />}
+        {tab === "goals" && <GoalsManager />}
+        {tab === "heat" && <Heatmap />}
+        {tab === "prog" && <Progression />}
+        {tab === "account" && <Account />}
+      </main>
+
+      {/* Fixed bottom nav */}
+      <BottomNav active={tab} onChange={setTab} />
     </div>
   )
 }
