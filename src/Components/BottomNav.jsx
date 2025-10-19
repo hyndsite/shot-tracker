@@ -18,7 +18,7 @@ import {
   
   export default function BottomNav({ active, onChange }) {
     return (
-      <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-slate-200 bg-white shadow-sm">
+      <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-slate-200 bg-white">
         <ul className="flex justify-around max-w-3xl mx-auto py-2 px-1 sm:py-2">
           {TABS.map(({ key, label, Icon }) => {
             const isActive = active === key
@@ -32,9 +32,7 @@ import {
                     size={22}
                     strokeWidth={2}
                     className={
-                      isActive
-                        ? "text-blue-600"
-                        : "text-slate-500 hover:text-slate-700"
+                      isActive ? "text-blue-600" : "text-slate-500"
                     }
                   />
                   <span
