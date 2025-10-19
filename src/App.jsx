@@ -6,6 +6,7 @@ import Heatmap from "./Heatmap"
 import Progression from "./Progression"
 import Account from "./Account"
 import PWAUpdateBanner from "./PWAUpdateBanner"
+import BottomNav from "./components/BottomNav"
 
 export default function App() {
   const [tab, setTab] = useState("log")
