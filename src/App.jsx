@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react"
-import BottomNav from "./components/BottomNav"
+
 import SessionLog from "./screens/SessionLog"
 import YTDSummary from "./YTDSummary"
 import GoalsManager from "./GoalsManager"
