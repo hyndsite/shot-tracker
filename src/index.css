@@ -10,7 +10,7 @@
 
 /* Override forced dark backgrounds on native form elements */
 @layer base {
-  select, input, textarea, button {
+  select, input, textarea {
     background-color: #ffffff !important;
     color: #0f172a !important;
     border-color: #cbd5e1 !important;
@@ -33,6 +33,40 @@
 }
 
 html { color-scheme: light; }
+
+/* 2) Tailwind layers */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 3) Component classes */
+@layer components {
+  /* Buttons */
+  .btn { @apply inline-flex items-center justify-center px-4 py-2 rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed; }
+
+  .btn-primary   { @apply bg-emerald-600 text-white hover:bg-emerald-700; }
+  .btn-secondary { @apply bg-white text-slate-900 border border-slate-300 hover:bg-slate-50; }
+  .btn-accent    { @apply bg-indigo-600 text-white hover:bg-indigo-700; }
+  .btn-quiet     { @apply bg-white text-slate-900 border border-slate-300 text-sm px-3 py-1.5 hover:bg-slate-50 rounded-md; }
+
+  /* Bottom nav */
+  .nav-wrap   { @apply fixed bottom-0 left-0 right-0 z-40 border-t border-slate-200 bg-white; }
+  .nav-list   { @apply flex justify-around max-w-3xl mx-auto py-2 px-1 sm:py-2; }
+  .nav-item   { @apply flex flex-col items-center justify-center w-16 sm:w-20; }
+  .nav-label  { @apply mt-1 text-[11px] font-medium; }
+  .nav-inact  { @apply text-slate-500 hover:text-slate-700; }  /* icon */
+  .nav-inactT { @apply text-slate-600; }                       /* text  */
+  .nav-act    { @apply text-blue-600; }                        /* icon/text active */
+
+  /* Inputs */
+  .field { @apply w-full max-w-xs border border-slate-300 bg-white text-slate-900 rounded-md px-2 py-1; }
+  .field-sm { @apply w-28 border border-slate-300 bg-white text-slate-900 rounded-md px-2 py-1; }
+
+  /* Cards/containers */
+  .card       { @apply bg-white border border-slate-200 rounded-xl p-4; }
+  .muted      { @apply text-sm text-slate-500; }
+  .section-h  { @apply text-base font-semibold text-slate-900; }
+}
 
 a {
   font-weight: 500;

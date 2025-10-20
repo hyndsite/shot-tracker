@@ -233,15 +233,15 @@ export default function SessionLog() {
 
         <div className="flex gap-2 mt-4">
           <button onClick={() => addBatch(true)}
-                  className="px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700">
+                  className="btn btn-primary">
             Save & Add Another
           </button>
           <button onClick={() => addBatch(false)}
-                  className="px-4 py-2 rounded-lg bg-white text-slate-900 border border-slate-300 text-sm font-semibold hover:bg-slate-50">
+                  className="btn btn-secondary">
             Save
           </button>
           <button onClick={onMarkSet}
-                  className="ml-auto px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700">
+                  className="btn btn-accent">
             Mark Set
           </button>
         </div>
@@ -290,11 +290,11 @@ export default function SessionLog() {
       <div className="fixed bottom-3 left-0 right-0 flex justify-center px-3">
         <div className="w-full max-w-3xl rounded-2xl shadow-lg border border-slate-200 bg-white p-3 flex items-center gap-2">
           <button onClick={onPlusAttempts}
-                  className="px-3 py-1.5 rounded-md bg-white text-slate-900 border border-slate-300 text-sm hover:bg-slate-50">
+                  className="btn-quiet">
             +10 Attempts
           </button>
           <button onClick={onPlusMake}
-                  className="px-3 py-1.5 rounded-md bg-white text-slate-900 border border-slate-300 text-sm hover:bg-slate-50">
+                  className="btn-quiet">
             +Make
           </button>
           <button onClick={onMarkSet}
