@@ -104,35 +104,37 @@ export default function YTDSummary() {
   }).sort((a,b)=> (b.attempts - a.attempts))
 
   return (
-    <div style={{ padding:16, fontFamily:'system-ui, -apple-system, Segoe UI, Roboto', maxWidth:900, margin:'0 auto' }}>
-      <h2 style={{ marginBottom:6 }}>YTD Summary ({dayjs().year()})</h2>
-      <div style={{ marginBottom:12, padding:12, background:'#f6f7fb', borderRadius:10 }}>
-        <div>Attempts: <b>{totals.attempts}</b> · Makes: <b>{totals.makes}</b> · eFG%: <b>{(efg(totals)*100).toFixed(1)}%</b></div>
+    <div className="text-slate-900">   {/* ensures children are dark */}
+      <div style={{ padding:16, fontFamily:'system-ui, -apple-system, Segoe UI, Roboto', maxWidth:900, margin:'0 auto' }}>
+        <h2 style={{ marginBottom:6 }}>YTD Summary ({dayjs().year()})</h2>
+        <div style={{ marginBottom:12, padding:12, background:'#f6f7fb', borderRadius:10 }}>
+          <div>Attempts: <b>{totals.attempts}</b> · Makes: <b>{totals.makes}</b> · eFG%: <b>{(efg(totals)*100).toFixed(1)}%</b></div>
+        </div>
+
+        <h3 style={{ margin:'8px 0' }}>By Zone</h3>
+        <Table
+          columns={[
+            { key:'zone', label:'Zone' },
+            { key:'attempts', label:'Att' },
+            { key:'makes', label:'Makes' },
+            { key:'fg', label:'FG%' },
+            { key:'efg', label:'eFG%' }
+          ]}
+          rows={zoneRows}
+        />
+
+        <h3 style={{ margin:'12px 0 6px' }}>By Shot Type</h3>
+        <Table
+          columns={[
+            { key:'shotType', label:'Shot Type' },
+            { key:'attempts', label:'Att' },
+            { key:'makes', label:'Makes' },
+            { key:'fg', label:'FG%' },
+            { key:'efg', label:'eFG%' }
+          ]}
+          rows={typeRows}
+        />
       </div>
-
-      <h3 style={{ margin:'8px 0' }}>By Zone</h3>
-      <Table
-        columns={[
-          { key:'zone', label:'Zone' },
-          { key:'attempts', label:'Att' },
-          { key:'makes', label:'Makes' },
-          { key:'fg', label:'FG%' },
-          { key:'efg', label:'eFG%' }
-        ]}
-        rows={zoneRows}
-      />
-
-      <h3 style={{ margin:'12px 0 6px' }}>By Shot Type</h3>
-      <Table
-        columns={[
-          { key:'shotType', label:'Shot Type' },
-          { key:'attempts', label:'Att' },
-          { key:'makes', label:'Makes' },
-          { key:'fg', label:'FG%' },
-          { key:'efg', label:'eFG%' }
-        ]}
-        rows={typeRows}
-      />
     </div>
   )
 }
