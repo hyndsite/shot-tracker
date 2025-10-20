@@ -3,9 +3,18 @@
 @tailwind utilities;
 
 
-:root, html, body { color-scheme: light; background: #f8fafc; }
-@media (prefers-color-scheme: dark) {
-  :root, html, body { color-scheme: light; } /* override any dark */
+:root, html, body {
+  color-scheme: light;
+  background-color: #ffffff !important;
+}
+
+/* Override forced dark backgrounds on native form elements */
+@layer base {
+  select, input, textarea, button {
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+    border-color: #cbd5e1 !important;
+  }
 }
 
 :root {
@@ -21,14 +30,6 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-}
-
-@layer base {
-  select, input, textarea, button {
-    background-color: #ffffff;
-    color: #0f172a;
-    border-color: #cbd5e1;
-  }
 }
 
 html { color-scheme: light; }
