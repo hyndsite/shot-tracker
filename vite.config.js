@@ -12,8 +12,8 @@ export default defineConfig({
         name: 'Shot Tracker',
         short_name: 'ShotTracker',
         description: 'Offline eFG% shot logging with goals, charts, and heatmaps.',
-        theme_color: '#0f172a',
-        background_color: '#0b1220',
+        theme_color: '#ffffff',
+        background_color: '#ffffff',
         display: 'standalone',
         start_url: '/',
         icons: [
