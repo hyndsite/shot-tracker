@@ -6,6 +6,7 @@ import {
 } from '../lib/db'
 import { ZONES, SHOT_TYPES, SUBTYPES } from '../constants'
 import { efg } from '../types'
+import { ChevronDown } from 'lucide-react'
 
 function FieldRow({ label, children }) {
   return (
@@ -178,56 +179,76 @@ export default function SessionLog() {
       {/* Batch Form */}
       <div className="bg-white border border-slate-200 rounded-xl p-4">
         <FieldRow label="Zone">
-          <select value={zoneId} onChange={e=>setZoneId(e.target.value)}
-                  className="w-full max-w-xs border border-slate-300 bg-white text-slate-900 rounded-md px-2 py-1">
-            {ZONES.map(z => <option key={z.id} value={z.id}>{z.label}</option>)}
-          </select>
+          <div className="ctl-wrap">
+            <select
+              value={zoneId}
+              onChange={e=>setZoneId(e.target.value)}
+              className="ctl pr-9"  /* extra right padding for chevron */
+            >
+              {ZONES.map(z => <option key={z.id} value={z.id}>{z.label}</option>)}
+            </select>
+            <ChevronDown size={18} className="ctl-chevron" />
+          </div>
         </FieldRow>
 
         <FieldRow label="Shot Type">
-          <select value={shotType} onChange={e=>setShotType(e.target.value)}
-                  className="w-full max-w-xs border border-slate-300 bg-white text-slate-900 rounded-md px-2 py-1">
-            {SHOT_TYPES.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
-          </select>
+          <div className="ctl-wrap">
+            <select
+              value={shotType}
+              onChange={e=>setShotType(e.target.value)}
+              className="ctl pr-9"
+            >
+              {SHOT_TYPES.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
+            </select>
+            <ChevronDown size={18} className="ctl-chevron" />
+          </div>
         </FieldRow>
 
         {shotType === 'off_dribble' && (
           <FieldRow label="Subtype">
-            <select value={subtype} onChange={e=>setSubtype(e.target.value)}
-                    className="w-full max-w-xs border border-slate-300 bg-white text-slate-900 rounded-md px-2 py-1">
-              {SUBTYPES.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
-            </select>
+            <div className="ctl-wrap">
+              <select
+                value={subtype}
+                onChange={e=>setSubtype(e.target.value)}
+                className="ctl pr-9"
+              >
+                {SUBTYPES.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
+              </select>
+              <ChevronDown size={18} className="ctl-chevron" />
+            </div>
           </FieldRow>
         )}
 
         <FieldRow label="Pressured">
-          <label className="inline-flex items-center gap-2 text-sm">
-            <input type="checkbox" checked={pressured} onChange={e=>setPressured(e.target.checked)} />
-            <span>Mark as pressured</span>
-          </label>
+          <button
+            type="button"
+            aria-pressed={pressured}
+            onClick={()=>setPressured(p=>!p)}
+            className={`toggle ${pressured ? 'toggle-on' : 'toggle-off'}`}
+          >
+            {pressured ? 'Pressured: ON' : 'Pressured: OFF'}
+          </button>
         </FieldRow>
 
         <FieldRow label="Attempts">
           <div className="flex items-center gap-2">
-            <input type="number" min="0" value={attempts}
-                   onChange={e=>setAttempts(e.target.value)}
-                   className="w-28 border border-slate-300 rounded-md px-2 py-1" />
-            <button onClick={onPlusAttempts}
-                    className="px-3 py-1.5 rounded-md bg-slate-100 text-slate-800 text-sm hover:bg-slate-200">
-              +10 Attempts
-            </button>
+            <input
+              type="number" min="0" value={attempts}
+              onChange={e=>setAttempts(e.target.value)}
+              className="ctl ctl-sm"
+            />
+            <button onClick={onPlusAttempts} className="btn-quiet">+10 Attempts</button>
           </div>
         </FieldRow>
 
         <FieldRow label="Makes">
           <div className="flex items-center gap-2">
-            <input type="number" min="0" value={makes}
-                   onChange={e=>setMakes(e.target.value)}
-                   className="w-28 border border-slate-300 rounded-md px-2 py-1" />
-            <button onClick={onPlusMake}
-                    className="px-3 py-1.5 rounded-md bg-slate-100 text-slate-800 text-sm hover:bg-slate-200">
-              +Make
-            </button>
+            <input
+              type="number" min="0" value={makes}
+              onChange={e=>setMakes(e.target.value)}
+              className="ctl ctl-sm"
+            />
+            <button onClick={onPlusMake} className="btn-quiet">+Make</button>
           </div>
         </FieldRow>
 

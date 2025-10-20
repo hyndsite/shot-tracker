@@ -73,6 +73,34 @@
   .nav-icon  { @apply transition-opacity; }
   .nav-act   { @apply text-blue-600; }   /* active icon/text */
   .nav-inact { @apply text-slate-800 hover:text-slate-900; } /* inactive */
+
+  /* Unified control look (dropdowns + inputs) */
+  .ctl {
+    @apply w-full max-w-xs bg-white text-slate-900 border border-slate-300 rounded-lg px-3 py-2
+           shadow-sm appearance-none outline-none transition ring-1 ring-slate-100
+           focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500;
+  }
+  .ctl-sm { @apply w-28 px-3 py-2; }
+
+  /* Wrapper adds chevron & proper spacing for selects */
+  .ctl-wrap {
+    @apply relative inline-flex items-center;
+  }
+  .ctl-chevron {
+    @apply pointer-events-none absolute right-3 text-slate-500;
+  }
+
+  /* Toggle button (pressed = on) */
+  .toggle {
+    @apply inline-flex items-center gap-2 px-4 py-2 rounded-lg border font-semibold
+           transition select-none;
+  }
+  .toggle-off {
+    @apply bg-white border-slate-300 text-slate-900 hover:bg-slate-50;
+  }
+  .toggle-on {
+    @apply bg-indigo-600 border-indigo-600 text-white hover:bg-indigo-700;
+  }
 }
 
 /* Override forced dark backgrounds on native form elements */
