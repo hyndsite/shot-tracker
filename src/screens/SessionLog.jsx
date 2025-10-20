@@ -241,7 +241,7 @@ export default function SessionLog() {
             Save
           </button>
           <button onClick={onMarkSet}
-                  className="btn btn-accent">
+                  className="btn btn-accent ml-auto">
             Mark Set
           </button>
         </div>

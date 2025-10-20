@@ -1,11 +1,69 @@
+/* ---------------------------------
+   1. Light mode enforcement
+----------------------------------- */
+:root, html, body {
+  color-scheme: light;
+  background-color: #ffffff;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root, html, body { color-scheme: light; }
+}
+
+/* ---------------------------------
+   2. Tailwind core layers
+----------------------------------- */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* ---------------------------------
+   3. Base text + form field overrides
+----------------------------------- */
+@layer base {
+  body {
+    @apply text-slate-900 bg-slate-50;
+  }
 
-:root, html, body {
-  color-scheme: light;
-  background-color: #ffffff !important;
+  /* Keep text readable across headings & paragraphs */
+  h1,h2,h3,h4,h5,h6,p,span,div,li {
+    @apply text-slate-900;
+  }
+
+  /* Form controls stay light but not buttons */
+  select, input, textarea {
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+    border-color: #cbd5e1 !important;
+  }
+}
+
+/* ---------------------------------
+   4. Component classes (buttons, nav, fields)
+----------------------------------- */
+@layer components {
+
+  /* ----- BUTTONS ----- */
+  .btn {
+    @apply inline-flex items-center justify-center px-4 py-2 rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .btn-primary   { @apply bg-emerald-600 text-white hover:bg-emerald-700; }
+  .btn-secondary { @apply bg-white text-slate-900 border border-slate-300 hover:bg-slate-50; }
+  .btn-accent    { @apply bg-indigo-600 text-white hover:bg-indigo-700; }
+  .btn-quiet     { @apply bg-white text-slate-900 border border-slate-300 text-sm px-3 py-1.5 hover:bg-slate-50 rounded-md; }
+
+  /* ----- FIELDS ----- */
+  .field { @apply w-full max-w-xs border border-slate-300 bg-white text-slate-900 rounded-md px-2 py-1; }
+  .field-sm { @apply w-28 border border-slate-300 bg-white text-slate-900 rounded-md px-2 py-1; }
+
+  /* ----- NAVIGATION BAR ----- */
+  .nav-wrap  { @apply fixed bottom-0 left-0 right-0 z-40 border-t border-slate-200 bg-white shadow-sm; }
+  .nav-list  { @apply flex justify-around max-w-3xl mx-auto py-2 px-1 sm:py-2; }
+  .nav-item  { @apply flex flex-col items-center justify-center w-16 sm:w-20; }
+  .nav-label { @apply mt-1 text-[11px] font-medium; }
+  .nav-icon  { @apply transition-opacity; }
+  .nav-act   { @apply text-blue-600; }   /* active icon/text */
+  .nav-inact { @apply text-slate-800 hover:text-slate-900; } /* inactive */
 }
 
 /* Override forced dark backgrounds on native form elements */
