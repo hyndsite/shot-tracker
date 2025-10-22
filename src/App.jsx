@@ -24,7 +24,7 @@ export default function App() {
       <PWAUpdateBanner />
 
       {/* Main content area */}
-      <main className="mx-auto max-w-5xl px-3 sm:px-4 pt-3 pb-36">
+      <main className="mx-auto max-w-5xl px-3 sm:px-4 pt-3 content-pad">
         {tab === "log" && <SessionLog />}
         {tab === "ytd" && <YTDSummary />}
         {tab === "goals" && <GoalsManager />}

@@ -231,14 +231,11 @@ export default function SessionLog() {
         </FieldRow>
 
         <FieldRow label="Attempts">
-          <div className="flex items-center gap-2">
-            <input
-              type="number" min="0" value={attempts}
-              onChange={e=>setAttempts(e.target.value)}
-              className="ctl ctl-sm"
-            />
-            <button onClick={onPlusAttempts} className="btn-quiet">+10 Attempts</button>
-          </div>
+          <input
+            type="number" min="0" value={attempts}
+            onChange={e=>setAttempts(e.target.value)}
+            className="ctl ctl-sm"
+          />
         </FieldRow>
 
         <FieldRow label="Makes">
@@ -248,7 +245,6 @@ export default function SessionLog() {
               onChange={e=>setMakes(e.target.value)}
               className="ctl ctl-sm"
             />
-            <button onClick={onPlusMake} className="btn-quiet">+Make</button>
           </div>
         </FieldRow>
 
@@ -260,10 +256,6 @@ export default function SessionLog() {
           <button onClick={() => addBatch(false)}
                   className="btn btn-secondary">
             Save
-          </button>
-          <button onClick={onMarkSet}
-                  className="btn btn-accent ml-auto">
-            Mark Set
           </button>
         </div>
       </div>
@@ -316,7 +308,7 @@ export default function SessionLog() {
             <button onClick={onMarkSet}      className="quickbtn quick-mark">Mark Set</button>
           </div>
         </div>
-      </div>  
+      </div>
     </div>
   )
 }
