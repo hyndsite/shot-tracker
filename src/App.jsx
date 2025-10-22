@@ -20,11 +20,11 @@ export default function App() {
   }, [tab])
 
   return (
-    <div className="font-sans bg-slate-50 min-h-screen pb-16"> 
+    <div className="font-sans bg-slate-50 min-h-screen">
       <PWAUpdateBanner />
 
       {/* Main content area */}
-      <main className="mx-auto max-w-3xl px-3 sm:px-4 pt-3 pb-20">
+      <main className="mx-auto max-w-5xl px-3 sm:px-4 pt-3 pb-36">
         {tab === "log" && <SessionLog />}
         {tab === "ytd" && <YTDSummary />}
         {tab === "goals" && <GoalsManager />}

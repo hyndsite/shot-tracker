@@ -101,6 +101,28 @@
   .toggle-on {
     @apply bg-indigo-600 border-indigo-600 text-white hover:bg-indigo-700;
   }
+
+  /* Bottom quick action bar (sits above BottomNav) */
+  .quickbar {
+    @apply fixed left-0 right-0 z-30;
+    bottom: calc(env(safe-area-inset-bottom) + 56px); /* 56px ≈ BottomNav height */
+  }
+  .quickbar-inner {
+    @apply mx-auto max-w-3xl px-3;
+  }
+  .quickbar-card {
+    @apply w-full grid grid-cols-3 gap-2 rounded-2xl border border-slate-200 bg-white p-3 shadow-lg;
+  }
+
+  /* Equal-width buttons */
+  .quickbtn {
+    @apply w-full inline-flex items-center justify-center rounded-lg px-3 py-2 font-semibold text-sm transition-colors;
+  }
+
+  /* Themed variants */
+  .quick-attempts { @apply bg-white text-slate-900 border border-slate-300 hover:bg-slate-50; }
+  .quick-make     { @apply bg-emerald-600 text-white hover:bg-emerald-700; }
+  .quick-mark     { @apply bg-indigo-600 text-white hover:bg-indigo-700; }
 }
 
 /* Override forced dark backgrounds on native form elements */

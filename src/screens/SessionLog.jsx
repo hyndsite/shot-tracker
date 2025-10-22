@@ -307,23 +307,16 @@ export default function SessionLog() {
         </ul>
       </div>
 
-      {/* Sticky Quick Bar */}
-      <div className="fixed bottom-3 left-0 right-0 flex justify-center px-3">
-        <div className="w-full max-w-3xl rounded-2xl shadow-lg border border-slate-200 bg-white p-3 flex items-center gap-2">
-          <button onClick={onPlusAttempts}
-                  className="btn-quiet">
-            +10 Attempts
-          </button>
-          <button onClick={onPlusMake}
-                  className="btn-quiet">
-            +Make
-          </button>
-          <button onClick={onMarkSet}
-                  className="flex-1 py-2 rounded-lg bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700">
-            Mark Set
-          </button>
+      {/* Bottom Quick Action Bar */}
+      <div className="quickbar">
+        <div className="quickbar-inner">
+          <div className="quickbar-card">
+            <button onClick={onPlusAttempts} className="quickbtn quick-attempts">+10 Attempts</button>
+            <button onClick={onPlusMake}     className="quickbtn quick-make">+Make</button>
+            <button onClick={onMarkSet}      className="quickbtn quick-mark">Mark Set</button>
+          </div>
         </div>
-      </div>
+      </div>  
     </div>
   )
 }
