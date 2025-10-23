@@ -61,20 +61,111 @@ function colorForDensity(ratioPct) {
 }
 
 /** --- UI PILL ROW --- */
-function PillRow({ items, activeKey, onClick, label }) {
+function ChipRow({ items, activeKey, onClick, label }) {
   return (
     <div className="hm-subrow">
-      {label ? <span className="hm-label">{label}</span> : null}
-      <div className="flex flex-wrap gap-2">
-        {items.map(it => (
-          <button
-            key={it.key || it.id || it}
-            className={`pill ${ (it.key||it.id||it) === activeKey ? 'pill-on' : 'pill-off' }`}
-            onClick={() => onClick(it.key||it.id||it)}
-          >
-            {it.label || it}
-          </button>
-        ))}
+      {label ? <span className="chip-label">{label}</span> : null}
+      <div className="chip-group">
+        {items.map(it => {
+          const key = it.key || it.id || it
+          const text = it.label || it
+          const active = key === activeKey
+          return (
+            <button
+              key={key}
+              className={`chip ${active ? 'chip-on' : 'chip-off'}`}
+              onClick={() => onClick(key)}
+            >
+              {text}
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+/** --- LEGEND COMPONENT --- */
+function Legend({ metric }) {
+  if (metric === 'density') {
+    return (
+      <div className="legend-card">
+        <div className="legend-title">Attempt Density (share of all attempts in range)</div>
+        <div className="legend-grid">
+          <div className="legend-item">
+            <div className="legend-row"><span className="legend-dot" style={{background:'#cbd5e1'}}></span>
+              <span className="legend-text">Low ≤ 5%</span></div>
+          </div>
+          <div className="legend-item">
+            <div className="legend-row"><span className="legend-dot" style={{background:'#94a3b8'}}></span>
+              <span className="legend-text">Medium ≤ 12%</span></div>
+          </div>
+          <div className="legend-item">
+            <div className="legend-row"><span className="legend-dot" style={{background:'#64748b'}}></span>
+              <span className="legend-text">High ≤ 20%</span></div>
+          </div>
+          <div className="legend-item sm:col-span-3">
+            <div className="legend-row"><span className="legend-dot" style={{background:'#1d4ed8'}}></span>
+              <span className="legend-text">Very High &gt; 20%</span></div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (metric === 'fg') {
+    return (
+      <div className="legend-card">
+        <div className="legend-title">FG% color scales (upper bound indicates the end of the range)</div>
+        <div className="legend-grid">
+          {/* 3-pointer */}
+          <div className="legend-item">
+            <div className="legend-text font-semibold mb-1">3-pointer</div>
+            <div className="legend-row"><span className="legend-dot" style={{background:'#ef4444'}}></span>
+              <span className="legend-text">≤ 20%</span></div>
+            <div className="legend-row"><span className="legend-dot" style={{background:'#eab308'}}></span>
+              <span className="legend-text">≤ 44%</span></div>
+            <div className="legend-row"><span className="legend-dot" style={{background:'#16a34a'}}></span>
+              <span className="legend-text">≤ 100%</span></div>
+          </div>
+          {/* Mid-range */}
+          <div className="legend-item">
+            <div className="legend-text font-semibold mb-1">Mid-range</div>
+            <div className="legend-row"><span className="legend-dot" style={{background:'#ef4444'}}></span>
+              <span className="legend-text">≤ 30%</span></div>
+            <div className="legend-row"><span className="legend-dot" style={{background:'#eab308'}}></span>
+              <span className="legend-text">≤ 64%</span></div>
+            <div className="legend-row"><span className="legend-dot" style={{background:'#16a34a'}}></span>
+              <span className="legend-text">≤ 100%</span></div>
+          </div>
+          {/* Free Throws */}
+          <div className="legend-item">
+            <div className="legend-text font-semibold mb-1">Free Throws</div>
+            <div className="legend-row"><span className="legend-dot" style={{background:'#ef4444'}}></span>
+              <span className="legend-text">≤ 40%</span></div>
+            <div className="legend-row"><span className="legend-dot" style={{background:'#eab308'}}></span>
+              <span className="legend-text">≤ 65%</span></div>
+            <div className="legend-row"><span className="legend-dot" style={{background:'#16a34a'}}></span>
+              <span className="legend-text">≤ 100%</span></div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+  
+  // metric === 'ft'
+  return (
+    <div className="legend-card">
+      <div className="legend-title">Free Throws (upper bound of each color range)</div>
+      <div className="legend-grid sm:grid-cols-1">
+        <div className="legend-item">
+          <div className="legend-row"><span className="legend-dot" style={{background:'#ef4444'}}></span>
+            <span className="legend-text">≤ 40%</span></div>
+          <div className="legend-row"><span className="legend-dot" style={{background:'#eab308'}}></span>
+            <span className="legend-text">≤ 65%</span></div>
+          <div className="legend-row"><span className="legend-dot" style={{background:'#16a34a'}}></span>
+            <span className="legend-text">≤ 100%</span></div>
+        </div>
       </div>
     </div>
   )
@@ -183,19 +274,19 @@ export default function Heatmap() {
       </header>
 
       {/* Row 1: Metric pills */}
-      <PillRow items={METRICS} activeKey={metric} onClick={setMetric} />
+      <ChipRow items={METRICS} activeKey={metric} onClick={setMetric} />
 
       {/* Row 2: Days pills with "Days:" label */}
-      <PillRow items={DAYS} activeKey={days} onClick={setDays} label="Days:" />
+      <ChipRow items={DAYS} activeKey={days} onClick={setDays} label="Days:" />
 
-      {/* Row 3: Shot-type filters */}
+     {/* Shot filters */}
       <div className="hm-subrow">
-        <div className="flex flex-wrap gap-2">
+        <div className="chip-group">
           {SHOT_FILTERS.map(f => (
             <button
               key={f.id}
-              onClick={()=>toggleFilter(f.id)}
-              className={`pill ${filters.has(f.id) ? 'pill-on' : 'pill-off'}`}
+              className={`chip ${filters.has(f.id) ? 'chip-on' : 'chip-off'}`}
+              onClick={() => toggleFilter(f.id)}
             >
               {f.label}
             </button>
@@ -220,7 +311,7 @@ export default function Heatmap() {
             const bg = badgeColor(id, stats)
             const lines = badgeLines(id, stats)
             return (
-              <g key={id} transform={`translate(${p.x}, ${p.y})`} onClick={()=>setModal({ zoneId:id, stats, metric })} style={{ cursor:'pointer' }}>
+              <g className="zone-badge" key={id} transform={`translate(${p.x}, ${p.y})`} onClick={()=>setModal({ zoneId:id, stats, metric })} style={{ cursor:'pointer' }}>
                 <rect x={-50} y={-18} width={100} height={28} rx={8} fill={bg} />
                 <text x="0" y="-3" textAnchor="middle" fontSize="11" fill="#fff" fontWeight="700">
                   {lines[0]}
@@ -234,47 +325,8 @@ export default function Heatmap() {
         </svg>
 
         {/* --- Legend --- */}
-        <div className="legend mt-3">
-          {metric === 'density' ? (
-            <div className="legend-row">
-              <div className="legend-swatch" style={{background:'#cbd5e1'}}></div><div className="legend-text">≤ 5%</div>
-              <div className="legend-swatch" style={{background:'#94a3b8'}}></div><div className="legend-text">≤ 12%</div>
-              <div className="legend-swatch" style={{background:'#64748b'}}></div><div className="legend-text">≤ 20%</div>
-              <div className="legend-swatch" style={{background:'#1d4ed8'}}></div><div className="legend-text">&gt; 20%</div>
-            </div>
-          ) : metric === 'fg' ? (
-            <>
-              <div className="legend-text mb-1">FG% scales (upper bound of each color range):</div>
-              <div className="legend-row mb-1">
-                <span className="legend-text w-24">Mid-range</span>
-                <div className="legend-swatch" style={{background:'#ef4444'}}></div><div className="legend-text">≤ 30%</div>
-                <div className="legend-swatch" style={{background:'#eab308'}}></div><div className="legend-text">≤ 64%</div>
-                <div className="legend-swatch" style={{background:'#16a34a'}}></div><div className="legend-text">≤ 100%</div>
-              </div>
-              <div className="legend-row mb-1">
-                <span className="legend-text w-24">3-pointer</span>
-                <div className="legend-swatch" style={{background:'#ef4444'}}></div><div className="legend-text">≤ 20%</div>
-                <div className="legend-swatch" style={{background:'#eab308'}}></div><div className="legend-text">≤ 44%</div>
-                <div className="legend-swatch" style={{background:'#16a34a'}}></div><div className="legend-text">≤ 100%</div>
-              </div>
-              <div className="legend-row">
-                <span className="legend-text w-24">Free throws</span>
-                <div className="legend-swatch" style={{background:'#ef4444'}}></div><div className="legend-text">≤ 40%</div>
-                <div className="legend-swatch" style={{background:'#eab308'}}></div><div className="legend-text">≤ 65%</div>
-                <div className="legend-swatch" style={{background:'#16a34a'}}></div><div className="legend-text">≤ 100%</div>
-              </div>
-            </>
-          ) : (
-            <>
-              <div className="legend-text mb-1">Free Throws (upper bound of each color range):</div>
-              <div className="legend-row">
-                <div className="legend-swatch" style={{background:'#ef4444'}}></div><div className="legend-text">≤ 40%</div>
-                <div className="legend-swatch" style={{background:'#eab308'}}></div><div className="legend-text">≤ 65%</div>
-                <div className="legend-swatch" style={{background:'#16a34a'}}></div><div className="legend-text">≤ 100%</div>
-              </div>
-            </>
-          )}
-        </div>
+        <Legend metric={metric} />
+
       </section>
 
       {/* --- Modal --- */}
