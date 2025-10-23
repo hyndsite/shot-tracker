@@ -1,6 +1,8 @@
 // src/Account.jsx
 import { useEffect, useState, useMemo } from 'react'
 import dayjs from 'dayjs'
+import relativeTime from 'dayjs/plugin/relativeTime'   // ← add
+dayjs.extend(relativeTime)     
 import { Mail, LogIn, LogOut, UploadCloud, DownloadCloud, Trash2, User as UserIcon, CheckCircle2 } from 'lucide-react'
 import { supabase, getUser } from './lib/supabase'
 import { pushAllLocal, pullAllRemote } from './lib/sync'

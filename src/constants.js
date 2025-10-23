@@ -1,19 +1,27 @@
+
 export const ZONES = [
-    { id: 'corner_left',  label: 'Corner L',  isThree: true },
-    { id: 'wing_left',    label: 'Wing L',    isThree: true },
-    { id: 'top',          label: 'Top',       isThree: true },
-    { id: 'wing_right',   label: 'Wing R',    isThree: true },
-    { id: 'corner_right', label: 'Corner R',  isThree: true },
-  
-    { id: 'elbow_left',   label: 'Elbow L',   isThree: false },
-    { id: 'elbow_right',  label: 'Elbow R',   isThree: false },
-    { id: 'mid_left',     label: 'Mid L',     isThree: false },
-    { id: 'mid_right',    label: 'Mid R',     isThree: false },
-    { id: 'short_left',   label: 'Short L',   isThree: false },
-    { id: 'short_right',  label: 'Short R',   isThree: false },
-    { id: 'paint_restricted', label: 'Paint (R)', isThree: false },
-    { id: 'paint',        label: 'Paint',     isThree: false },
-  
+    { id: 'left_corner_3',  label: 'L Corner 3',  isThree: true },
+    { id: 'left_wing_3',    label: 'L Wing 3',    isThree: true },
+    { id: 'left_slot_3',    label: 'L Slot 3',    isThree: true },
+    { id: 'center_3',       label: 'Center 3',    isThree: true },
+    { id: 'right_wing_3',   label: 'R Wing 3',   isThree: true },
+    { id: 'right_corner_3', label: 'R Corner 3', isThree: true },
+    { id: 'right_slot_3',   label: 'R Slot 3',   isThree: true },
+
+    { id: 'left_high_post',     label: 'L High Post',   isThree: false },
+    { id: 'left_low_post',     label: 'L Low Post',   isThree: false },
+    { id: 'left_deep_mid',      label: 'L Deep Mid',   isThree: false },
+    { id: 'left_short_corner',  label: 'L Short Corner',   isThree: false },
+    { id: 'left_wing_mid',      label: 'L Wing Mid',   isThree: false },
+    { id: 'center_mid',         label: 'Center Mid',   isThree: false },
+    { id: 'right_wing_mid',     label: 'R Wing Mid',    isThree: false },
+    { id: 'right_short_corner', label: 'R Short Corner',   isThree: false },
+    { id: 'right_deep_mid',     label: 'R Deep Mid',    isThree: false },
+    { id: 'nail',               label: 'Nail',          isThree: false },
+    { id: 'right_low_post',     label: 'R Low Post',    isThree: false },
+    { id: 'right_high_post',    label: 'R High Post',   isThree: false },
+    { id: 'runner_floater',     label: 'Runner|Floater',    isThree: false },
+    
     { id: 'free_throw',   label: 'Free Throw',isThree: false }
   ]
   

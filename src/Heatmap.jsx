@@ -1,102 +1,317 @@
+// src/Heatmap.jsx
 import { useEffect, useMemo, useState } from 'react'
 import dayjs from 'dayjs'
-import { getEntries } from './lib/db'
-import { ZONES } from './constants'
-import { efg } from './types'
+import { X } from 'lucide-react'
 
-const GRID = [
-  ['corner_left','wing_left','top','wing_right','corner_right'],
-  ['elbow_left','mid_left','paint','mid_right','elbow_right'],
-  ['short_left','paint_restricted','free_throw','paint_restricted','short_right']
+import courtImg from './images/court-half.svg'
+import { ZONES, SHOT_TYPES } from './constants'
+import { ZONE_ANCHORS } from './constants/zoneAnchors'
+import { getEntries } from './lib/db'
+
+/** --- SPEC CONSTANTS --- */
+const METRICS = [
+  { key: 'density', label: 'Attempt Density' },
+  { key: 'fg',      label: 'FG%' },
+  { key: 'ft',      label: 'Free Throws' },
 ]
 
-function statColor(val) {
-  const t = Math.max(0, Math.min(1, val))
-  const g = Math.round(200 * t)
-  const b = Math.round(200 * (1 - t))
-  return `rgb(20, ${g}, ${b})`
+const DAYS = [
+  {key:'1',   label:'1',   days:1},
+  {key:'7',   label:'7',   days:7},
+  {key:'30',  label:'30',  days:30},
+  {key:'365', label:'365', days:365},
+  {key:'all', label:'All', days:Infinity},
+]
+
+// Shot filters: keep 'pressured' as its own toggle
+const SHOT_FILTERS = [
+  { id:'catch_shoot', label:'Catch & Shoot' },
+  { id:'off_dribble', label:'Off-Dribble'  },
+  { id:'free_throw',  label:'Free Throws'   },
+  { id:'pressured',   label:'Pressured'     },
+]
+
+/** --- COLOR SCALES (UPPER BOUNDS) --- */
+function colorForFG(zoneId, pct) {
+  if (zoneId === 'free_throw') {
+    // FT scale: 40 red, 65 yellow, 100 green
+    if (pct <= 40) return '#ef4444'
+    if (pct <= 65) return '#eab308'
+    return '#16a34a'
+  }
+  const isThree = ZONES.find(z => z.id === zoneId)?.isThree
+  if (isThree) {
+    // 3PT: 20 red, 44 yellow, 100 green
+    if (pct <= 20) return '#ef4444'
+    if (pct <= 44) return '#eab308'
+    return '#16a34a'
+  }
+  // Midrange: 30 red, 64 yellow, 100 green
+  if (pct <= 30) return '#ef4444'
+  if (pct <= 64) return '#eab308'
+  return '#16a34a'
+}
+
+function colorForDensity(ratioPct) {
+  // Neutral density scale (kept distinct from FG scales)
+  if (ratioPct <= 5)  return '#cbd5e1'  // low
+  if (ratioPct <= 12) return '#94a3b8'  // med
+  if (ratioPct <= 20) return '#64748b'  // high
+  return '#1d4ed8'                      // very high
+}
+
+/** --- UI PILL ROW --- */
+function PillRow({ items, activeKey, onClick, label }) {
+  return (
+    <div className="hm-subrow">
+      {label ? <span className="hm-label">{label}</span> : null}
+      <div className="flex flex-wrap gap-2">
+        {items.map(it => (
+          <button
+            key={it.key || it.id || it}
+            className={`pill ${ (it.key||it.id||it) === activeKey ? 'pill-on' : 'pill-off' }`}
+            onClick={() => onClick(it.key||it.id||it)}
+          >
+            {it.label || it}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
 }
 
 export default function Heatmap() {
   const [entries, setEntries] = useState([])
-  const [mode, setMode] = useState('density') // density | accuracy | efg
-  const [range, setRange] = useState('30')     // 7 | 30 | 365 | all
+  const [metric, setMetric]   = useState('density')
+  const [days, setDays]       = useState('30')
+  const [filters, setFilters] = useState(new Set(SHOT_FILTERS.map(f=>f.id))) // all ON by default
+  const [modal, setModal]     = useState(null) // {zoneId, stats}
 
   useEffect(() => { (async () => setEntries(await getEntries()))() }, [])
 
-  const filtered = useMemo(() => {
-    if (range === 'all') return entries
-    const days = Number(range)
-    const start = dayjs().subtract(days - 1, 'day').startOf('day')
-    return entries.filter(e => dayjs(e.ts).isAfter(start))
-  }, [entries, range])
+  const cutoff = useMemo(() => {
+    const d = DAYS.find(d => d.key === days)
+    return d?.days === Infinity ? null : dayjs().subtract(d.days, 'day')
+  }, [days])
 
-  const zone = new Map()
-  for (const z of ZONES) zone.set(z.id, { attempts:0, makes:0, threesMade:0 })
-  for (const e of filtered) {
-    const t = zone.get(e.zoneId) || { attempts:0, makes:0, threesMade:0 }
-    t.attempts += e.attempts
-    t.makes    += e.makes
-    if (e.isThree) t.threesMade += e.makes
-    zone.set(e.zoneId, t)
+  // Apply date + shot-type/pressured filters
+  const filtered = useMemo(() => {
+    return entries.filter(e => {
+      if (cutoff && !dayjs(e.ts).isAfter(cutoff)) return false
+      // Shot types ON/OFF
+      if (e.shotType === 'catch_shoot' && !filters.has('catch_shoot')) return false
+      if (e.shotType === 'off_dribble' && !filters.has('off_dribble')) return false
+      if (e.shotType === 'free_throw'  && !filters.has('free_throw'))  return false
+      // Pressured filter ON means include pressured. If pressured is OFF, keep both (unless you want "only not pressured")
+      if (filters.has('pressured') === false && e.pressured) return false
+      return true
+    })
+  }, [entries, cutoff, filters])
+
+  // Aggregate attempts/makes by zone
+  const perZone = useMemo(() => {
+    const map = new Map()
+    for (const z of ZONES) map.set(z.id, { attempts:0, makes:0 })
+    for (const e of filtered) {
+      const rec = map.get(e.zoneId)
+      if (!rec) continue
+      rec.attempts += Number(e.attempts || 0)
+      rec.makes    += Number(e.makes || 0)
+    }
+    return map
+  }, [filtered])
+
+  // Denominator for density = all attempts in range (incl. FT), per your spec
+  const totalAttempts = useMemo(
+    () => [...perZone.values()].reduce((a,r)=>a + r.attempts, 0),
+    [perZone]
+  )
+
+  // Build zone stats for display
+  const zoneStats = useMemo(() => {
+    const byId = {}
+    for (const z of ZONES) {
+      const rec = perZone.get(z.id) || { attempts:0, makes:0 }
+      const fg  = rec.attempts ? Math.round((rec.makes/rec.attempts)*100) : 0
+      const densityPct = totalAttempts ? Math.round((rec.attempts/totalAttempts)*100) : 0
+      byId[z.id] = { id:z.id, label:z.label, attempts:rec.attempts, makes:rec.makes, fg, densityPct }
+    }
+    return byId
+  }, [perZone, totalAttempts])
+
+  // Visible IDs for each metric
+  const visibleZoneIds = useMemo(() => {
+    if (metric === 'ft') return ['free_throw'] // FT mode: single zone
+    return ZONES.filter(z => z.id !== 'free_throw').map(z => z.id)
+  }, [metric])
+
+  // Toggle filters handler
+  function toggleFilter(id) {
+    setFilters(prev => {
+      const n = new Set(prev)
+      if (n.has(id)) n.delete(id); else n.add(id)
+      return n
+    })
   }
 
-  const maxAtt = Math.max(1, ...Array.from(zone.values()).map(v => v.attempts))
+  // Badge background color by metric + zone
+  function badgeColor(id, stats) {
+    if (metric === 'density') return colorForDensity(stats?.densityPct || 0)
+    if (metric === 'fg')      return colorForFG(id, stats?.fg || 0)
+    // ft
+    return colorForFG('free_throw', stats?.fg || 0)
+  }
 
-  const cellStat = (zid) => {
-    const t = zone.get(zid) || { attempts:0, makes:0, threesMade:0 }
-    if (mode === 'density') return { label: `${t.attempts} att`, ratio: t.attempts / maxAtt }
-    if (mode === 'accuracy') {
-      const r = t.attempts ? t.makes / t.attempts : 0
-      return { label: t.attempts ? `${(r * 100).toFixed(0)}%` : '—', ratio: r }
+  // Badge text by metric + zone
+  function badgeLines(id, stats) {
+    if (metric === 'density') {
+      return [stats.label, `${stats.attempts} • ${stats.densityPct}%`]
     }
-    const r = t.attempts ? efg(t) : 0
-    return { label: t.attempts ? `${(r * 100).toFixed(0)}% eFG` : '—', ratio: r }
+    if (metric === 'fg') {
+      return [stats.label, `${stats.fg}%`]
+    }
+    // ft
+    return ['Free Throw', `${stats.attempts} • ${stats.fg}%`]
   }
 
   return (
-    <div style={{ padding:16, fontFamily:'system-ui, -apple-system, Segoe UI, Roboto', maxWidth:900, margin:'0 auto' }}>
-      <h2>Shot Map (Zones)</h2>
+    <div className="mx-auto max-w-3xl px-3 sm:px-4 pb-24 text-slate-900">
+      {/* Header */}
+      <header className="mb-2">
+        <h2 className="text-xl font-bold">Heatmap</h2>
+        <p className="muted">Tap a zone to see details</p>
+      </header>
 
-      <div style={{ display:'flex', gap:8, margin:'8px 0' }}>
-        <label>Mode:{' '}
-          <select value={mode} onChange={e=>setMode(e.target.value)}>
-            <option value="density">Attempt Density</option>
-            <option value="accuracy">FG% (per zone)</option>
-            <option value="efg">eFG% (per zone)</option>
-          </select>
-        </label>
-        <label>Range:{' '}
-          <select value={range} onChange={e=>setRange(e.target.value)}>
-            <option value="7">Last 7 days</option>
-            <option value="30">Last 30 days</option>
-            <option value="365">Last 365 days</option>
-            <option value="all">All time</option>
-          </select>
-        </label>
+      {/* Row 1: Metric pills */}
+      <PillRow items={METRICS} activeKey={metric} onClick={setMetric} />
+
+      {/* Row 2: Days pills with "Days:" label */}
+      <PillRow items={DAYS} activeKey={days} onClick={setDays} label="Days:" />
+
+      {/* Row 3: Shot-type filters */}
+      <div className="hm-subrow">
+        <div className="flex flex-wrap gap-2">
+          {SHOT_FILTERS.map(f => (
+            <button
+              key={f.id}
+              onClick={()=>toggleFilter(f.id)}
+              className={`pill ${filters.has(f.id) ? 'pill-on' : 'pill-off'}`}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
       </div>
 
-      <div style={{ border:'1px solid #e5e7eb', borderRadius:12, padding:12 }}>
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(5,1fr)', gap:8 }}>
-          {GRID.flat().map((zid, i) => {
-            const meta = ZONES.find(z => z.id === zid)
-            const { label, ratio } = cellStat(zid)
-            const color = statColor(ratio)
+      {/* --- Court with SVG background + anchored badges --- */}
+      <section className="hm-card">
+        <svg viewBox="0 0 671 995" className="w-full h-auto">
+          <image
+            href={courtImg}
+            x={0} y={0}
+            width={671} height={995}
+            preserveAspectRatio="xMidYMid meet"
+          />
+          {/* Badges */}
+          {visibleZoneIds.map(id => {
+            const p = ZONE_ANCHORS[id]
+            if (!p) return null // skip if not calibrated
+            const stats = zoneStats[id] || { label:id, attempts:0, fg:0, densityPct:0 }
+            const bg = badgeColor(id, stats)
+            const lines = badgeLines(id, stats)
             return (
-              <div key={i} style={{
-                background: color, color:'white', borderRadius:10, padding:'16px 8px',
-                textAlign:'center', minHeight:64, display:'flex', flexDirection:'column', justifyContent:'center'
-              }}>
-                <div style={{ fontWeight:700, fontSize:13 }}>{meta ? meta.label : zid}</div>
-                <div style={{ fontSize:12, opacity:0.9 }}>{label}</div>
-              </div>
+              <g key={id} transform={`translate(${p.x}, ${p.y})`} onClick={()=>setModal({ zoneId:id, stats, metric })} style={{ cursor:'pointer' }}>
+                <rect x={-50} y={-18} width={100} height={28} rx={8} fill={bg} />
+                <text x="0" y="-3" textAnchor="middle" fontSize="11" fill="#fff" fontWeight="700">
+                  {lines[0]}
+                </text>
+                <text x="0" y="11" textAnchor="middle" fontSize="11" fill="#fff" fontWeight="700">
+                  {lines[1]}
+                </text>
+              </g>
             )
           })}
+        </svg>
+
+        {/* --- Legend --- */}
+        <div className="legend mt-3">
+          {metric === 'density' ? (
+            <div className="legend-row">
+              <div className="legend-swatch" style={{background:'#cbd5e1'}}></div><div className="legend-text">≤ 5%</div>
+              <div className="legend-swatch" style={{background:'#94a3b8'}}></div><div className="legend-text">≤ 12%</div>
+              <div className="legend-swatch" style={{background:'#64748b'}}></div><div className="legend-text">≤ 20%</div>
+              <div className="legend-swatch" style={{background:'#1d4ed8'}}></div><div className="legend-text">&gt; 20%</div>
+            </div>
+          ) : metric === 'fg' ? (
+            <>
+              <div className="legend-text mb-1">FG% scales (upper bound of each color range):</div>
+              <div className="legend-row mb-1">
+                <span className="legend-text w-24">Mid-range</span>
+                <div className="legend-swatch" style={{background:'#ef4444'}}></div><div className="legend-text">≤ 30%</div>
+                <div className="legend-swatch" style={{background:'#eab308'}}></div><div className="legend-text">≤ 64%</div>
+                <div className="legend-swatch" style={{background:'#16a34a'}}></div><div className="legend-text">≤ 100%</div>
+              </div>
+              <div className="legend-row mb-1">
+                <span className="legend-text w-24">3-pointer</span>
+                <div className="legend-swatch" style={{background:'#ef4444'}}></div><div className="legend-text">≤ 20%</div>
+                <div className="legend-swatch" style={{background:'#eab308'}}></div><div className="legend-text">≤ 44%</div>
+                <div className="legend-swatch" style={{background:'#16a34a'}}></div><div className="legend-text">≤ 100%</div>
+              </div>
+              <div className="legend-row">
+                <span className="legend-text w-24">Free throws</span>
+                <div className="legend-swatch" style={{background:'#ef4444'}}></div><div className="legend-text">≤ 40%</div>
+                <div className="legend-swatch" style={{background:'#eab308'}}></div><div className="legend-text">≤ 65%</div>
+                <div className="legend-swatch" style={{background:'#16a34a'}}></div><div className="legend-text">≤ 100%</div>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="legend-text mb-1">Free Throws (upper bound of each color range):</div>
+              <div className="legend-row">
+                <div className="legend-swatch" style={{background:'#ef4444'}}></div><div className="legend-text">≤ 40%</div>
+                <div className="legend-swatch" style={{background:'#eab308'}}></div><div className="legend-text">≤ 65%</div>
+                <div className="legend-swatch" style={{background:'#16a34a'}}></div><div className="legend-text">≤ 100%</div>
+              </div>
+            </>
+          )}
         </div>
-        <div style={{ fontSize:12, color:'#475569', marginTop:8 }}>
-          * Grid approximates zones for speed; not literal court geometry.
+      </section>
+
+      {/* --- Modal --- */}
+      {modal && (
+        <div className="modal-scrim" onClick={()=>setModal(null)}>
+          <div className="modal-card" onClick={e=>e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-2">
+              <h4 className="text-base font-semibold">
+                {ZONES.find(z=>z.id===modal.zoneId)?.label || 'Zone'}
+              </h4>
+              <button className="btn btn-quiet" onClick={()=>setModal(null)}><X size={16}/></button>
+            </div>
+            <div className="text-sm">
+              <div className="flex justify-between py-1">
+                <span className="text-slate-600">Attempts</span>
+                <b>{modal.stats.attempts || 0}</b>
+              </div>
+              {modal.metric !== 'density' && (
+                <div className="flex justify-between py-1">
+                  <span className="text-slate-600">FG%</span>
+                  <b>{modal.stats.fg || 0}%</b>
+                </div>
+              )}
+              {modal.metric === 'density' && (
+                <div className="flex justify-between py-1">
+                  <span className="text-slate-600">Attempt Share</span>
+                  <b>{modal.stats.densityPct || 0}%</b>
+                </div>
+              )}
+            </div>
+            {/* Mini-chart could go here later */}
+            <div className="mt-3 text-xs text-slate-500">
+              Filtered over: {DAYS.find(d=>d.key===days)?.label} day(s). Toggle shot-type pills to refine.
+            </div>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   )
 }
