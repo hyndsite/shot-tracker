@@ -4,6 +4,7 @@ import { getUser, signInWithMagicLink } from "../lib/supabase"
 export default function Login({ onSent }) {
   const [email, setEmail] = useState("")
   const [sending, setSending] = useState(false)
+  const [sent, setSent] = useState(false)
   const [alreadyAuthed, setAlreadyAuthed] = useState(false)
   const [error, setError] = useState(null)
 
@@ -17,9 +18,11 @@ export default function Login({ onSent }) {
   async function sendLink(e) {
     e.preventDefault()
     setError(null)
+    setSent(false)
     setSending(true)
     try {
       await signInWithMagicLink(email.trim())
+      setSent(true)                  // <-- show confirmation
       onSent?.(email.trim())
     } catch (err) {
       setError(err?.message || "Failed to send magic link.")
@@ -73,6 +76,13 @@ export default function Login({ onSent }) {
           >
             {sending ? "Sending…" : "Send Magic Link"}
           </button>
+
+          {/* Confirmation line (small, below the button) */}
+          {sent && (
+            <p className="mt-2 text-sm text-green-600">
+              Link sent. Please check your email.
+            </p>
+          )}
         </form>
       </main>
     </div>
