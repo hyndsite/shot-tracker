@@ -1,4 +1,4 @@
-import { Home, BarChart3, Target, Map, Activity, User } from "lucide-react"
+import { Home, BarChart3, Target, Map, Activity, User, Trophy } from "lucide-react"
 
 const TABS = [
   { key: "log", label: "Log", Icon: Home },
@@ -7,6 +7,7 @@ const TABS = [
   { key: "heat", label: "Heatmap", Icon: Map },
   { key: "prog", label: "Progress", Icon: Activity },
   { key: "account", label: "Account", Icon: User },
+  { key: "game", label: "Game", Icon: Trophy },
 ]
 
 export default function BottomNav({ active, onChange }) {
