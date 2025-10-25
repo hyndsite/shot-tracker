@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import BottomNav from "./Components/BottomNav"
+import BottomNav from "./components/BottomNav"
 
 import SessionLog from "./screens/SessionLog"
 import YTDSummary from "./YTDSummary"
