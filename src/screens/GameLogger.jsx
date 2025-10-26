@@ -242,7 +242,7 @@ function Court({ onTapZone, pctAnchors, dots, onImgReady }) {
           onClick={() => onTapZone(id)}
           aria-label={a.label || id}
         >
-          /* keep a tiny focus/hover hint without filling the whole button */
+          {/* keep a tiny focus/hover hint without filling the whole button */}
           <span className="block h-6 w-6 rounded-full opacity-0 focus:opacity-30 hover:opacity-10 bg-black" />
         </button>
       ))}
