@@ -54,20 +54,22 @@ export default function ShotModal({ open, zone, onClose, onSubmit }) {
             </button>
           </div>
 
-          <div className="flex gap-2 pt-1">
-            <button
-              className={"px-4 py-2 rounded " + (canChooseResult ? "bg-green-600 text-white" : "bg-gray-200 text-gray-500 cursor-not-allowed")}
+          <div className="modal-actions">
+          <button 
+              className={`btn btn-green ${!canChooseResult ? "opacity-50 pointer-events-none" : ""}`}
               onClick={()=>chooseResult('make')}
             >Make</button>
-            <button
-              className={"px-4 py-2 rounded " + (canChooseResult ? "bg-gray-800 text-white" : "bg-gray-200 text-gray-500 cursor-not-allowed")}
+            <button 
+              className={`btn btn-gray-dark ${!canChooseResult ? "opacity-50 pointer-events-none" : ""}`}
               onClick={()=>chooseResult('miss')}
             >Miss</button>
           </div>
         </div>
 
         <div className="pt-1">
-          <button className="text-sm text-gray-500" onClick={onClose}>Cancel</button>
+          <button className="btn btn-danger text-sm" onClick={onClose} type="button">
+            Cancel
+          </button>
         </div>
       </div>
     </div>
