@@ -1,4 +1,3 @@
-// src/App.jsx
 import { useEffect, useState } from "react"
 
 // Bottom nav (lowercase path to match repo)
@@ -13,39 +12,31 @@ import GoalsManager from "./GoalsManager.jsx"
 import Account from "./Account.jsx"
 import PWAUpdateBanner from "./PWAUpdateBanner.jsx"
 
-// Auth screens
+// Auth
 import Login from "./screens/Login.jsx"
 
-// Game flow screens
-import ModeGate from "./screens/ModeGate.jsx"   // new: Practice vs Game chooser
-import GameGate from "./screens/GameGate.jsx"   // game hub: resume/start/previous
+// Game flow
+import ModeGate from "./screens/ModeGate.jsx"   // Practice vs Game chooser
+import GameGate from "./screens/GameGate.jsx"   // Game hub: resume/start/previous
 import GameNew from "./screens/GameNew.jsx"
 import GameLogger from "./screens/GameLogger.jsx"
 import GameDetail from "./screens/GameDetail.jsx"
 
-// Supabase helpers you actually export
+// Supabase helpers
 import { supabase, getUser } from "./lib/supabase.js"
 
 function App() {
-  /**
-   * Primary nav tab (what BottomNav controls)
-   * 'log' | 'ytd' | 'goals' | 'heat' | 'prog' | 'game' | 'account' | 'login' (internal)
-   */
+  // Primary tabs (BottomNav controls these)
+  // 'log' | 'ytd' | 'goals' | 'heat' | 'prog' | 'game' | 'account' | 'login' (internal)
   const [tab, setTab] = useState("log")
 
-  /**
-   * Game area sub-screen (internal state machine for Game tab)
-   * 'mode' -> ModeGate (Practice vs Game)
-   * 'gate' -> GameGate  (resume/start/previous)
-   * 'new'  -> GameNew   (new game form)
-   * 'logger' -> GameLogger (active game)
-   * 'detail' -> GameDetail (read-only view)
-   */
+  // Game sub-screens
+  // 'mode' -> ModeGate | 'gate' -> GameGate | 'new' -> GameNew | 'logger' -> GameLogger | 'detail' -> GameDetail
   const [gameScreen, setGameScreen] = useState("mode")
   const [activeGame, setActiveGame] = useState(null)
   const [detailGame, setDetailGame] = useState(null)
 
-  // Redirect unauthenticated users to Login on initial load.
+  // Initial auth gate -> Login if not authenticated
   useEffect(() => {
     (async () => {
       const u = await getUser()
@@ -53,7 +44,7 @@ function App() {
     })()
   }, [])
 
-  // After auth change -> land on Game tab, ModeGate first.
+  // After auth, land on Game -> ModeGate (you can change to 'log' if you prefer)
   useEffect(() => {
     const { data: sub } = supabase.auth.onAuthStateChange((_evt, session) => {
       if (session?.user) {
@@ -67,52 +58,40 @@ function App() {
     }
   }, [])
 
-  // Helper: ensure auth, otherwise send to Login
   async function ensureAuthedOrGoLogin() {
     const u = await getUser()
-    if (!u) {
-      setTab("login")
-      return null
-    }
+    if (!u) { setTab("login"); return null }
     return u
   }
 
-  // BottomNav handler
   async function handleTabSelect(next) {
     if (next === "game" || next === "account") {
       const u = await ensureAuthedOrGoLogin()
       if (!u) return
-      if (next === "game") setGameScreen("mode") // always enter at ModeGate
+      if (next === "game") setGameScreen("mode")
     }
     setTab(next)
   }
 
-  // Hide nav on Login for a clean look
   const showNav = tab !== "login"
 
   return (
     <div className="min-h-screen bg-white">
       <PWAUpdateBanner />
 
-      <div className="pb-20">
-        {/* Auth */}
-        {tab === "login" && <Login onSent={() => { /* optional toast */ }} />}
+      <div className="content-pad">
+        {tab === "login" && <Login />}
 
-        {/* Practice */}
         {tab === "log" && <SessionLog />}
 
-        {/* Analytics */}
         {tab === "ytd" && <YTDSummary />}
         {tab === "heat" && <Heatmap />}
         {tab === "prog" && <Progression />}
 
-        {/* Goals */}
         {tab === "goals" && <GoalsManager />}
 
-        {/* Account */}
         {tab === "account" && <Account />}
 
-        {/* Game area */}
         {tab === "game" && (
           gameScreen === "mode" ? (
             <ModeGate

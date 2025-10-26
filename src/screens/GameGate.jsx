@@ -12,7 +12,6 @@ export default function GameGate({ onStartNew, onResume, onOpenDetail }) {
     (async () => {
       const u = await getUser()
       setUser(u)
-
       if (u) setActive(await getActiveGameForUser(u.id))
 
       const all = await getGameSessions()
@@ -46,18 +45,17 @@ export default function GameGate({ onStartNew, onResume, onOpenDetail }) {
         <h3 className="section-h mb-3">Start</h3>
         {active ? (
           <div className="flex flex-wrap gap-3">
-            <button className="btn btn-brand"     onClick={() => onResume(active)}>Resume Active Game</button>
-            <button className="btn btn-secondary" onClick={() => onStartNew()}>Start New Game</button>
+            <button className="btn btn-primary" onClick={() => onResume(active)}>Resume Active Game</button>
+            <button className="btn btn-base btn--inline" onClick={() => onStartNew()}>Start New Game</button>
           </div>
         ) : (
-          <button className="btn btn-brand" onClick={() => onStartNew()}>New Game</button>
+          <button className="btn btn-primary" onClick={() => onStartNew()}>New Game</button>
         )}
       </section>
 
       <section className="card p-5">
         <h3 className="section-h mb-3">Previous Games</h3>
         {groups.length === 0 && <p className="muted">No completed games yet.</p>}
-
         <div className="space-y-5">
           {groups.map(g => (
             <div key={g.level}>
