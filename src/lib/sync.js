@@ -85,6 +85,6 @@ export async function pullAllRemote() {
     id: gi.id, setId: gi.set_id, type: gi.type, target: Number(gi.target),
     comparison: gi.comparison, filter: gi.filter_json
   })
-
+ 
   return { ok:true }
 }
