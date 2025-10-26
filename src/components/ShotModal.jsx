@@ -1,6 +1,4 @@
-// src/components/ShotModal.jsx
-import { useEffect, useState } from "react"
-import { createPortal } from "react-dom"
+import { useEffect, useState } from 'react'
 
 export default function ShotModal({ open, zone, onClose, onSubmit }) {
   const [isThree, setIsThree] = useState(zone?.isThree ?? false)
@@ -8,93 +6,54 @@ export default function ShotModal({ open, zone, onClose, onSubmit }) {
   const [contested, setContested] = useState(false)
 
   useEffect(() => {
-    if (!open) return
-    setIsThree(zone?.isThree ?? false)
-    setContext(null)
-    setContested(false)
-    // Prevent background scroll
-    document.body.style.overflow = "hidden"
-    return () => { document.body.style.overflow = "" }
+    if (open) {
+      setIsThree(zone?.isThree ?? false)
+      setContext(null)
+      setContested(false)
+    }
   }, [open, zone])
 
   if (!open) return null
 
+  const canToggleContested = !!context
   const canChooseResult = !!context
 
-  const modal = (
-    <div className="modal-backdrop">
-      <div className="modal-card space-y-3">
-        <div className="modal-title">{zone?.label || "Zone"}</div>
+  function chooseResult(result) {
+    if (!canChooseResult) return
+    onSubmit({
+      isThree,
+      shotContext: context,
+      contested,
+      result, // 'make' | 'miss'
+    })
+    onClose()
+  }
 
-        {/* Shot Type: 2-ptr / 3-ptr */}
-        <div className="seg">
-          <button
-            className={`seg-btn ${isThree ? "" : "is-on"}`}
-            onClick={() => setIsThree(false)}
-            type="button"
-          >
-            2-ptr
-          </button>
-          <button
-            className={`seg-btn ${isThree ? "is-on" : ""}`}
-            onClick={() => setIsThree(true)}
-            type="button"
-          >
-            3-ptr
-          </button>
-        </div>
+  return (
+    <div className="fixed inset-0 bg-black/40 flex items-end sm:items-center justify-center z-50">
+      <div className="bg-white w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl p-4 space-y-3">
+        <div className="text-base font-semibold">{zone?.label || 'Zone'}</div>
 
-        {/* Shot Context: Catch & Shoot / Off Dribble */}
-        <div className="seg">
-          <button
-            className={`seg-btn ${context === "Catch & Shoot" ? "is-on" : ""}`}
-            onClick={() => setContext("Catch & Shoot")}
-            type="button"
-          >
-            Catch & Shoot
-          </button>
-          <button
-            className={`seg-btn ${context === "Off Dribble" ? "is-on" : ""}`}
-            onClick={() => setContext("Off Dribble")}
-            type="button"
-          >
-            Off Dribble
-          </button>
-        </div>
+        <div className="space-y-2">
+          <div className="flex gap-2">
+            <Btn on={isThree === false} onClick={()=>setIsThree(false)}>2-ptr</Btn>
+            <Btn on={isThree === true}  onClick={()=>setIsThree(true)}>3-ptr</Btn>
+          </div>
 
-        {/* Contested toggle (enabled only after context is chosen) */}
-        <div>
-          <button
-            className={`seg-btn ${!context ? "is-disabled" : ""} ${contested ? "is-on" : ""}`}
-            onClick={() => context && setContested(v => !v)}
-            type="button"
-          >
-            Contested Shot
-          </button>
-        </div>
+          <div className="flex gap-2">
+            <Btn on={context === 'Catch & Shoot'} onClick={()=>setContext('Catch & Shoot')}>Catch & Shoot</Btn>
+            <Btn on={context === 'Off Dribble'}  onClick={()=>setContext('Off Dribble')}>Off Dribble</Btn>
+          </div>
 
-        {/* Make / Miss */}
-        <div className="modal-actions">
-          <button
-            className={`btn btn-brand ${!canChooseResult ? "is-disabled opacity-50 pointer-events-none" : ""}`}
-            onClick={() => { onSubmit({ isThree, shotContext: context, contested, result: "make" }); onClose() }}
-            type="button"
-          >
-            Make
-          </button>
-          <button
-            className={`btn btn-secondary ${!canChooseResult ? "is-disabled opacity-50 pointer-events-none" : ""}`}
-            onClick={() => { onSubmit({ isThree, shotContext: context, contested, result: "miss" }); onClose() }}
-            type="button"
-          >
-            Miss
-          </button>
-        </div>
+          <div className="flex items-center gap-2">
+            <button
+              className={"px-3 py-2 rounded border " + (canToggleContested ? "" : "opacity-50 pointer-events-none") + (contested ? " bg-gray-900 text-white" : "")}
+              onClick={()=>setContested(v=>!v)}
+            >
+              Contested Shot
+            </button>
+          </div>
 
-        <div>
-          <button className="btn btn-ghost text-sm" onClick={onClose} type="button">
-            Cancel
-          </button>
           <div className="modal-actions">
           <button 
               className={`btn btn-green ${!canChooseResult ? "opacity-50 pointer-events-none" : ""}`}
@@ -107,8 +66,6 @@ export default function ShotModal({ open, zone, onClose, onSubmit }) {
           </div>
         </div>
 
-        <div className="modal-note">
-          Select a shot context to enable Make/Miss.
         <div className="pt-1">
           <button className="btn btn-danger text-sm" onClick={onClose} type="button">
             Cancel
@@ -117,6 +74,13 @@ export default function ShotModal({ open, zone, onClose, onSubmit }) {
       </div>
     </div>
   )
+}
 
-  return createPortal(modal, document.body)
+function Btn({ on, onClick, children }) {
+  return (
+    <button
+      className={"px-3 py-2 rounded border " + (on ? "bg-black text-white" : "")}
+      onClick={onClick}
+    >{children}</button>
+  )
 }
