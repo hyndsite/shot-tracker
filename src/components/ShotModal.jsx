@@ -95,10 +95,24 @@ export default function ShotModal({ open, zone, onClose, onSubmit }) {
           <button className="btn btn-ghost text-sm" onClick={onClose} type="button">
             Cancel
           </button>
+          <div className="modal-actions">
+          <button 
+              className={`btn btn-green ${!canChooseResult ? "opacity-50 pointer-events-none" : ""}`}
+              onClick={()=>chooseResult('make')}
+            >Make</button>
+            <button 
+              className={`btn btn-gray-dark ${!canChooseResult ? "opacity-50 pointer-events-none" : ""}`}
+              onClick={()=>chooseResult('miss')}
+            >Miss</button>
+          </div>
         </div>
 
         <div className="modal-note">
           Select a shot context to enable Make/Miss.
+        <div className="pt-1">
+          <button className="btn btn-danger text-sm" onClick={onClose} type="button">
+            Cancel
+          </button>
         </div>
       </div>
     </div>

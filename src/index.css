@@ -289,32 +289,111 @@ html { color-scheme: light; }
 
 /* 3) Component classes */
 @layer components {
-  /* Buttons */
-  .btn { @apply inline-flex items-center justify-center px-4 py-2 rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed; }
+  /* ---------- Layout / Cards / Sections ---------- */
+  .page       { @apply w-full px-4 py-6; }                           /* full-width mobile page padding */
+  .card       { @apply bg-white border border-slate-200 rounded-2xl p-4 shadow-sm; }
+  .section-h  { @apply text-lg font-semibold text-slate-900; }
+  .muted      { @apply text-sm text-slate-600; }
 
-  .btn-primary   { @apply bg-emerald-600 text-white hover:bg-emerald-700; }
-  .btn-secondary { @apply bg-white text-slate-900 border border-slate-300 hover:bg-slate-50; }
-  .btn-accent    { @apply bg-indigo-600 text-white hover:bg-indigo-700; }
-  .btn-quiet     { @apply bg-white text-slate-900 border border-slate-300 text-sm px-3 py-1.5 hover:bg-slate-50 rounded-md; }
+  /* ---------- Buttons ---------- */
+  .btn {
+    @apply inline-flex items-center justify-center px-4 py-2 rounded-lg text-sm font-semibold
+           transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .btn-primary    { @apply bg-emerald-600 text-white hover:bg-emerald-700; }
+  .btn-secondary  { @apply bg-white text-slate-900 border border-slate-300 hover:bg-slate-50; }
+  .btn-accent     { @apply bg-indigo-600 text-white hover:bg-indigo-700; }
+  .btn-quiet      { @apply bg-white text-slate-900 border border-slate-300 text-sm px-3 py-1.5 hover:bg-slate-50 rounded-md; }
 
-  /* Bottom nav */
+  /* Brand + Game-mode specific variants */
+  .btn-brand      { @apply text-white bg-[#17449e] hover:bg-[#133a86]; } /* primary CTA */
+  .btn-danger     { @apply text-white bg-red-600 hover:bg-red-700; }     /* destructive/cancel */
+  .btn-green      { @apply text-white bg-green-600 hover:bg-green-700; } /* Make */
+  .btn-gray-dark  { @apply text-white bg-slate-800 hover:bg-slate-900; } /* Miss */
+
+  /* ---------- Inputs / Fields ---------- */
+  .field      { @apply w-full max-w-xs border border-slate-300 bg-white text-slate-900 rounded-md px-2 py-1; }
+  .field-sm   { @apply w-28 border border-slate-300 bg-white text-slate-900 rounded-md px-2 py-1; }
+
+  /* Unified control look (dropdowns + inputs) */
+  .ctl {
+    @apply w-full max-w-xs bg-white text-slate-900 border border-slate-300 rounded-lg px-3 py-2
+           shadow-sm appearance-none outline-none transition ring-1 ring-slate-100
+           focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500;
+  }
+  .ctl-sm     { @apply w-28 px-3 py-2; }
+  .ctl-wrap   { @apply relative inline-flex items-center; }
+  .ctl-chevron{ @apply pointer-events-none absolute right-3 text-slate-500; }
+
+  /* ---------- Segmented choices / Chips ---------- */
+  .seg        { @apply inline-flex items-center gap-2; }
+  .seg-btn    { @apply px-3 py-2 rounded-lg border border-slate-300 bg-white text-slate-800; }
+  .seg-btn.is-on       { @apply bg-slate-900 text-white border-slate-900; }
+  .seg-btn.is-disabled { @apply opacity-50 pointer-events-none; }
+
+  .chip       { @apply inline-flex items-center rounded-full px-3 py-1.5 text-sm font-medium transition-colors select-none; }
+  .chip-off   { @apply bg-white border border-slate-300 text-slate-800 hover:bg-slate-50; }
+  .chip-on    { @apply bg-blue-600 border border-blue-600 text-white hover:bg-blue-700; }
+  .chip-group { @apply flex flex-wrap gap-2; }
+  .chip-label { @apply text-sm font-semibold text-slate-700 mr-1; }
+
+  /* ---------- Court zone click-targets (stay invisible) ---------- */
+  .zone-hit {
+    background: transparent !important;
+    border: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+    outline: none !important;
+    appearance: none !important;
+  }
+  .zone-hit:hover,
+  .zone-hit:active,
+  .zone-hit:focus { background: transparent !important; }
+
+  /* ---------- Modal ---------- */
+  .modal-backdrop { @apply fixed inset-0 bg-black/40 z-[9999] flex items-end sm:items-center justify-center; }
+  .modal-card     { @apply w-full sm:max-w-md bg-white rounded-t-2xl sm:rounded-2xl p-4 shadow-xl; }
+  .modal-title    { @apply text-base font-semibold text-slate-900; }
+  .modal-actions  { @apply flex gap-2 pt-1; }
+  .modal-note     { @apply text-xs text-slate-500; }
+
+  /* ---------- Bottom Navigation ---------- */
   .nav-wrap   { @apply fixed bottom-0 left-0 right-0 z-40 border-t border-slate-200 bg-white; }
   .nav-list   { @apply flex justify-around max-w-3xl mx-auto py-2 px-1 sm:py-2; }
   .nav-item   { @apply flex flex-col items-center justify-center w-16 sm:w-20; }
   .nav-label  { @apply mt-1 text-[11px] font-medium; }
-  .nav-inact  { @apply text-slate-500 hover:text-slate-700; }  /* icon */
-  .nav-inactT { @apply text-slate-600; }                       /* text  */
-  .nav-act    { @apply text-blue-600; }                        /* icon/text active */
+  .nav-inact  { @apply text-slate-500 hover:text-slate-700; } /* icon/text inactive */
+  .nav-inactT { @apply text-slate-600; }                      /* optional text tone */
+  .nav-act    { @apply text-blue-600; }                        /* active */
 
-  /* Inputs */
-  .field { @apply w-full max-w-xs border border-slate-300 bg-white text-slate-900 rounded-md px-2 py-1; }
-  .field-sm { @apply w-28 border border-slate-300 bg-white text-slate-900 rounded-md px-2 py-1; }
+  /* ---------- Quick action bar (if used) ---------- */
+  .quickbar       { @apply fixed left-0 right-0 z-30; bottom: calc(env(safe-area-inset-bottom) + 56px); }
+  .quickbar-inner { @apply mx-auto max-w-3xl px-3; }
+  .quickbar-card  { @apply w-full grid grid-cols-3 gap-2 rounded-2xl border border-slate-200 bg-white p-3 shadow-lg; }
+  .quickbtn       { @apply w-full inline-flex items-center justify-center rounded-lg px-3 py-2 font-semibold text-sm transition-colors; }
+  .quick-attempts { @apply bg-white text-slate-900 border border-slate-300 hover:bg-slate-50; }
+  .quick-make     { @apply bg-emerald-600 text-white hover:bg-emerald-700; }
+  .quick-mark     { @apply bg-indigo-600 text-white hover:bg-indigo-700; }
 
-  /* Cards/containers */
-  .card       { @apply bg-white border border-slate-200 rounded-xl p-4; }
-  .muted      { @apply text-sm text-slate-500; }
-  .section-h  { @apply text-base font-semibold text-slate-900; }
+  /* ---------- Lists / Legend ---------- */
+  .list-link  { @apply w-full text-left py-2.5 px-3 text-slate-800 bg-white hover:bg-slate-50; }
+  .chart-card { @apply bg-white border border-slate-200 rounded-xl p-4; }
+  .empty      { @apply flex items-center justify-center h-40 text-slate-500 text-sm; }
+  .legend-card  { @apply mt-3 bg-white border border-slate-200 rounded-xl p-3; }
+  .legend-title { @apply text-xs font-semibold text-slate-700 mb-2; }
+  .legend-grid  { @apply grid gap-2 sm:grid-cols-3; }
+  .legend-item  { @apply rounded-lg border border-slate-200 bg-slate-50 p-2; }
+  .legend-row   { @apply flex items-center gap-2; }
+  .legend-dot   { @apply inline-block h-2.5 w-2.5 rounded-full; }
+  .legend-text  { @apply text-xs text-slate-700; }
+
+  /* ---------- Content padding helper (keeps content clear of bottom bars) ---------- */
+  .content-pad {
+    padding-bottom: calc(64px + 72px + env(safe-area-inset-bottom) + 28px); /* nav + quickbar + safe area */
+  }
 }
+
 
 a {
   font-weight: 500;
