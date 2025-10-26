@@ -22,7 +22,8 @@ export default function Login({ onSent }) {
     setSending(true)
     try {
       await signInWithMagicLink(email.trim())
-      setSent(true)                  // <-- show confirmation
+      setSent(true)
+      setEmail("")              // <-- clear input after success
       onSent?.(email.trim())
     } catch (err) {
       setError(err?.message || "Failed to send magic link.")

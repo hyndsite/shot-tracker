@@ -13,10 +13,7 @@ export default function GameGate({ onStartNew, onResume, onOpenDetail }) {
       const u = await getUser()
       setUser(u)
 
-      if (u) {
-        const a = await getActiveGameForUser(u.id)
-        setActive(a)
-      }
+      if (u) setActive(await getActiveGameForUser(u.id))
 
       const all = await getGameSessions()
       const byLevel = all
@@ -29,7 +26,7 @@ export default function GameGate({ onStartNew, onResume, onOpenDetail }) {
       const levels = Object.keys(byLevel).sort()
       setGroups(levels.map(lvl => ({
         level: lvl,
-        items: byLevel[lvl].sort((a,b)=> (b.dateISO||'').localeCompare(a.dateISO||'')),
+        items: byLevel[lvl].sort((a,b)=> (b.dateISO||'').localeCompare(a.dateISO||''))
       })))
     })()
   }, [])
@@ -38,46 +35,54 @@ export default function GameGate({ onStartNew, onResume, onOpenDetail }) {
     return (
       <div className="p-6">
         <h2 className="text-xl font-semibold mb-2">Game Mode</h2>
-        <p className="text-sm text-gray-600">Please login on the Account tab first.</p>
+        <p className="text-sm text-gray-600">Please login on the Login page first.</p>
       </div>
     )
   }
 
   return (
-    <div className="p-4 space-y-4">
-      <div className="rounded border p-4">
-        <h3 className="text-lg font-semibold mb-2">Start</h3>
+    <div className="p-6 space-y-6">
+      <section className="card p-5">
+        <h3 className="text-lg font-semibold mb-3">Start</h3>
         {active ? (
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap gap-3">
             <button
-              className="px-4 py-2 rounded bg-black text-white"
+              className="btn btn-brand"
               onClick={() => onResume(active)}
-            >Resume Active Game</button>
-            <button
-              className="px-4 py-2 rounded border"
+            >
+              Resume Active Game
+            </button>
+            <button 
+              className="btn btn-secondary"
               onClick={() => onStartNew()}
-            >Start New Game</button>
+            >
+              Start New Game
+            </button>
           </div>
         ) : (
           <button
-            className="px-4 py-2 rounded bg-black text-white"
+            className="btn btn-brand"
             onClick={() => onStartNew()}
-          >New Game</button>
+          >
+            New Game
+          </button>
         )}
-      </div>
+      </section>
 
-      <div className="rounded border p-4">
+      <section className="card p-5">
         <h3 className="text-lg font-semibold mb-3">Previous Games</h3>
-        {groups.length === 0 && <p className="text-sm text-gray-600">No completed games yet.</p>}
-        <div className="space-y-4">
+        {groups.length === 0 && (
+          <p className="text-sm text-gray-600">No completed games yet.</p>
+        )}
+        <div className="space-y-5">
           {groups.map(g => (
             <div key={g.level}>
               <div className="text-sm font-medium text-gray-700 mb-2">{g.level}</div>
-              <ul className="divide-y">
+              <ul className="divide-y rounded-lg border border-slate-200 bg-white">
                 {g.items.map(it => (
                   <li key={it.id}>
-                    <button
-                      className="w-full text-left py-2 hover:bg-gray-50"
+                     <button 
+                      className="list-link"
                       onClick={() => onOpenDetail(it)}
                       title="Open game detail"
                     >
@@ -89,7 +94,7 @@ export default function GameGate({ onStartNew, onResume, onOpenDetail }) {
             </div>
           ))}
         </div>
-      </div>
+      </section>
     </div>
   )
 }

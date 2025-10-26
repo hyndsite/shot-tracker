@@ -187,11 +187,11 @@ export default function GameLogger({ session, onEnd, readOnly = false }) {
   return (
     <div className="p-3 space-y-3">
       <header className="flex items-center justify-between">
-        <div className="text-sm text-gray-700">
+        <div className="text-sm text-slate-700">
           {session.teamName} vs {session.opponentName} · {session.homeAway} · {session.level}
         </div>
         {!readOnly && (
-          <button className="rounded border px-3 py-1" onClick={handleEnd}>
+          <button className="btn btn-danger" onClick={handleEnd} type="button">
             End Game
           </button>
         )}
@@ -235,13 +235,14 @@ function Court({ onTapZone, pctAnchors, dots, onImgReady }) {
 
       {/* Click targets (invisible; show a faint ring on hover/focus) */}
       {Object.entries(pctAnchors).map(([id, a]) => (
-        <button
+         <button
           key={id}
-          className="absolute -translate-x-1/2 -translate-y-1/2 z-20"
+          className="zone-hit absolute -translate-x-1/2 -translate-y-1/2 z-20"
           style={{ left: `${a.leftPct}%`, top: `${a.topPct}%` }}
           onClick={() => onTapZone(id)}
           aria-label={a.label || id}
         >
+          /* keep a tiny focus/hover hint without filling the whole button */
           <span className="block h-6 w-6 rounded-full opacity-0 focus:opacity-30 hover:opacity-10 bg-black" />
         </button>
       ))}

@@ -198,6 +198,77 @@
   .legend-row  { @apply flex items-center gap-2; }
   .legend-dot  { @apply inline-block h-2.5 w-2.5 rounded-full; }
   .legend-text { @apply text-xs text-slate-700; }
+
+  /* Invisible click-target for court zones */
+  .zone-hit {
+    background: transparent !important;
+    border: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+    outline: none !important;
+    appearance: none !important;
+  }
+  .zone-hit:hover,
+  .zone-hit:active,
+  .zone-hit:focus {
+    background: transparent !important;
+  }
+  
+  /* Brand CTA (ISACA blue used earlier in your app) */
+  .btn-brand {
+    @apply bg-[#17449e] text-white hover:bg-[#133a86];
+  }
+
+  /* Neutral list row link for Previous Games */
+  .list-link {
+    @apply w-full text-left py-2.5 px-3 hover:bg-slate-50 text-slate-800;
+  }
+
+  /* --- Court zone click-targets --- */
+  .zone-hit {
+    background: transparent !important;
+    border: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+    outline: none !important;
+    appearance: none !important;
+  }
+  .zone-hit:hover,
+  .zone-hit:active,
+  .zone-hit:focus { background: transparent !important; }
+
+  /* --- Cards / sections --- */
+  .card { @apply rounded-2xl border border-slate-200 bg-white shadow-sm; }
+  .section-h { @apply text-lg font-semibold text-slate-900; }
+  .muted { @apply text-sm text-slate-600; }
+
+  /* --- Buttons --- */
+  .btn { @apply inline-flex items-center justify-center px-4 py-2 rounded-lg text-sm font-medium transition-colors; }
+  .btn-secondary { @apply border border-slate-300 text-slate-800 bg-white hover:bg-slate-50; }
+  .btn-brand { @apply text-white bg-[#17449e] hover:bg-[#133a86]; }
+  .btn-danger { @apply text-white bg-red-600 hover:bg-red-700; }
+  .btn-ghost { @apply text-slate-700 hover:bg-slate-100; }
+
+  /* --- Segmented choices (2-ptr/3-ptr, Shot Context) --- */
+  .seg { @apply inline-flex items-center gap-2; }
+  .seg-btn {
+    @apply px-3 py-2 rounded-lg border border-slate-300 bg-white text-slate-800;
+  }
+  .seg-btn.is-on {
+    @apply bg-slate-900 text-white border-slate-900;
+  }
+  .seg-btn.is-disabled {
+    @apply opacity-50 pointer-events-none;
+  }
+
+  /* --- Modal shell --- */
+  .modal-backdrop { @apply fixed inset-0 bg-black/40 z-[9999] flex items-end sm:items-center justify-center; }
+  .modal-card { @apply w-full sm:max-w-md bg-white rounded-t-2xl sm:rounded-2xl p-4 shadow-xl; }
+  .modal-title { @apply text-base font-semibold text-slate-900; }
+  .modal-actions { @apply flex gap-2 pt-1; }
+  .modal-note { @apply text-xs text-slate-500; }
 }
 
 /* Override forced dark backgrounds on native form elements */
