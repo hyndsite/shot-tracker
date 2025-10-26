@@ -269,6 +269,51 @@
   .modal-title { @apply text-base font-semibold text-slate-900; }
   .modal-actions { @apply flex gap-2 pt-1; }
   .modal-note { @apply text-xs text-slate-500; }
+
+   /* --- Segmented choices (2-ptr/3-ptr, Shot Type, Contested) --- */
+   .seg        { @apply inline-flex items-center gap-2; }
+   .seg-btn {
+     /* Force white base, defeat Android/Samsung button UA styles and any global button rules */
+     background-color: #ffffff !important;
+     color: #0f172a !important;            /* slate-900 text */
+     border: 1px solid #cbd5e1;            /* slate-300 */
+     border-radius: 0.5rem;                 /* rounded-lg */
+     padding: 0.5rem 0.75rem;               /* px-3 py-2 */
+     font-weight: 500;
+     -webkit-appearance: none;
+     appearance: none;
+     box-shadow: none;
+   }
+   .seg-btn:is(:hover,:focus) {
+     background-color: #f8fafc;            /* slate-50 */
+   }
+   .seg-btn.is-on {
+     /* Selected state only — deliberate dark pill */
+     background-color: #0f172a !important;  /* slate-900 */
+     color: #ffffff !important;
+     border-color: #0f172a;
+   }
+   .seg-btn.is-disabled {
+     opacity: 0.5;
+     pointer-events: none;
+   }
+ 
+   /* --- Bottom Navigation buttons must be fully transparent --- */
+   .nav-item {
+     background-color: transparent !important;
+     border: 0 !important;
+     -webkit-appearance: none;
+     appearance: none;
+     box-shadow: none !important;
+     padding: 0.25rem 0;                    /* small vertical padding */
+     -webkit-tap-highlight-color: transparent;
+   }
+ 
+   /* Keep your existing nav color tokens */
+   .nav-act   { color: #2563eb; }           /* blue-600 */
+   .nav-inact { color: #64748b; }           /* slate-500 */
+   .nav-inactT{ color: #475569; }           /* slate-600 */
+ 
 }
 
 /* Override forced dark backgrounds on native form elements */

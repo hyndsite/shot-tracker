@@ -22,7 +22,7 @@ export default function BottomNav({ active, onChange }) {
             <button
               key={key}
               type="button"
-              className="nav-item bg-transparent"  // ensure transparent background
+              className="nav-item"  // ensure transparent background
               onClick={() => onChange?.(key)}
               aria-current={isActive ? "page" : undefined}
               aria-label={label}
