@@ -1,7 +1,7 @@
 import { Home, BarChart3, Target, Map, Activity, User, Trophy } from "lucide-react"
 
 const TABS = [
-  { key: "log",     label: "Log",      Icon: Home },
+  { key: "practice",     label: "Practice",      Icon: Home },
   { key: "ytd",     label: "YTD",      Icon: BarChart3 },
   { key: "goals",   label: "Goals",    Icon: Target },
   { key: "heat",    label: "Heatmap",  Icon: Map },

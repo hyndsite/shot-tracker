@@ -4,7 +4,7 @@ import {
   getEntries, getGoalSets, getGoalItems,
   upsertGoalSet, deleteGoalSet, upsertGoalItem, deleteGoalItem
 } from './lib/db'
-import { evaluateGoal } from './lib/goals-engine'
+import { evaluateGoal } from './lib/goals-db'
 import { ZONES, SHOT_TYPES } from './constants'
 import { pushAllLocal, pullAllRemote } from './lib/sync'
 

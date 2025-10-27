@@ -27,8 +27,8 @@ import { supabase, getUser } from "./lib/supabase.js"
 
 function App() {
   // Primary tabs (BottomNav controls these)
-  // 'log' | 'ytd' | 'goals' | 'heat' | 'prog' | 'game' | 'account' | 'login' (internal)
-  const [tab, setTab] = useState("log")
+  // 'practice' | 'ytd' | 'goals' | 'heat' | 'prog' | 'game' | 'account' | 'login' (internal)
+  const [tab, setTab] = useState("practice")
 
   // Game sub-screens
   // 'mode' -> ModeGate | 'gate' -> GameGate | 'new' -> GameNew | 'logger' -> GameLogger | 'detail' -> GameDetail
@@ -82,7 +82,7 @@ function App() {
       <div className="content-pad">
         {tab === "login" && <Login />}
 
-        {tab === "log" && <SessionLog />}
+        {tab === "practice" && <SessionLog />}
 
         {tab === "ytd" && <YTDSummary />}
         {tab === "heat" && <Heatmap />}
