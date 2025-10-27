@@ -1,244 +1,314 @@
 import { useEffect, useMemo, useState } from 'react'
 import dayjs from 'dayjs'
 import {
-  getEntries, getGoalSets, getGoalItems,
-  upsertGoalSet, deleteGoalSet, upsertGoalItem, deleteGoalItem
+  getGoalSets, getGoalItems,
+  upsertGoalSet, deleteGoalSet,
+  upsertGoalItem, deleteGoalItem,
+  migrateGoalSets_AddMode
 } from './lib/db'
-import { evaluateGoal } from './lib/goals-db'
-import { ZONES, SHOT_TYPES } from './constants'
-import { pushAllLocal, pullAllRemote } from './lib/sync'
+import { evaluateGoal } from './lib/goals-engine'
 
+// ——— Small UI helpers ———
+function Section({ title, children }) {
+  return (
+    <div className="bg-white border border-slate-200 rounded-xl p-3 mb-4">
+      {title && <h2 className="text-base font-semibold mb-2">{title}</h2>}
+      {children}
+    </div>
+  )
+}
+const Badge = ({ children }) =>
+  <span className="inline-block text-[11px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">{children}</span>
+
+const Pencil = (props) => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" {...props}>
+    <path d="M3 21l3.75-.75L20.5 6.5a2.121 2.121 0 10-3-3L3.75 17.25 3 21z" stroke="currentColor" strokeWidth="1.5" fill="none"/>
+  </svg>
+)
+
+// ——— Goal type options (keep identical to your engine/types) ———
 const GOAL_TYPES = [
   { id:'efg_threshold',  label:'eFG% (overall)', unit:'%' },
-  { id:'three_pt',       label:'3P% (overall)',  unit:'%' , preset:{ filter:{ isThree:true, period:'30d'} }},
-  { id:'ft_pct',         label:'FT%',            unit:'%' , preset:{ filter:{ zone:'free_throw', period:'30d'} }},
-  { id:'fg_zone',        label:'FG% by Zone',    unit:'%' , preset:{ filter:{ zone:'corner_left', period:'30d'} }},
-  { id:'off_dribble_pct',label:'Off-Dribble FG%',unit:'%' , preset:{ filter:{ shotType:'off_dribble', period:'30d'} }},
-  { id:'pressured_pct',  label:'Pressured FG%',  unit:'%' , preset:{ filter:{ pressured:true, period:'30d'} }},
-  { id:'weekly_makes',   label:'Makes (7 days)', unit:'makes', preset:{ filter:{ period:'7d'} }},
-  { id:'attempts',       label:'Attempts (30 days)', unit:'attempts', preset:{ filter:{ period:'30d'} }}
+  { id:'three_pt',       label:'3P% (overall)',  unit:'%' },
+  { id:'ft_pct',         label:'FT%',            unit:'%' },
+  { id:'fg_zone',        label:'FG% by Zone',    unit:'%' },
+  { id:'off_dribble_pct',label:'Off-Dribble FG%',unit:'%' },
+  { id:'pressured_pct',  label:'Pressured FG%',  unit:'%' },
+  { id:'weekly_makes',   label:'Makes (7 days)', unit:'makes' },
+  { id:'attempts',       label:'Attempts (30 days)', unit:'attempts' },
 ]
 
-function Card({ children }) {
-  return <div style={{ border:'1px solid #e5e7eb', borderRadius:10, padding:12, marginBottom:12 }}>{children}</div>
+// Pretty days-left text
+function dueMeta(iso) {
+  if (!iso) return null
+  const d = dayjs(iso)
+  const now = dayjs()
+  const days = d.diff(now, 'day')
+  return { label: d.format('MMM D, YYYY'), days }
 }
 
 export default function GoalsManager() {
-  const [entries, setEntries] = useState([])
+  // Data
   const [sets, setSets] = useState([])
   const [items, setItems] = useState([])
-  const [activeSetId, setActiveSetId] = useState('')
-  const [formSet, setFormSet] = useState({ name:'', milestoneDate: dayjs().add(30,'day').format('YYYY-MM-DD') })
 
+  // Create/Edit Set form state
+  const [editSetId, setEditSetId] = useState(null)
+  const [setName, setSetName] = useState('')
+  const [setDateISO, setSetDateISO] = useState('')
+  const [setMode, setSetMode] = useState('practice') // NEW
+
+  // Add Goal form state
+  const [targetSetId, setTargetSetId] = useState('')
+  const [goalType, setGoalType] = useState('efg_threshold')
+  const [goalTarget, setGoalTarget] = useState('')
+  const [goalDetails, setGoalDetails] = useState('') // free text helper; your engine uses structured filter
+
+  // Load + migrate
   useEffect(() => {
     (async () => {
-      setEntries(await getEntries())
-      const s = await getGoalSets()
-      const i = await getGoalItems()
+      await migrateGoalSets_AddMode()
+      const [s, it] = await Promise.all([getGoalSets(), getGoalItems()])
       setSets(s)
-      setItems(i)
-      if (s.length && !activeSetId) setActiveSetId(s[0].id)
+      setItems(it)
+      if (s.length) setTargetSetId(s[0].id)
     })()
   }, [])
 
-  const activeSet = useMemo(() => sets.find(s => s.id === activeSetId) || null, [sets, activeSetId])
-  const activeItems = useMemo(() => items.filter(i => i.setId === activeSetId), [items, activeSetId])
+  // Derived: sets sorted by due date (soonest first; undated go last)
+  const sortedSets = useMemo(() => {
+    const withRank = sets.map(s => ({
+      ...s,
+      __rank: s.milestoneDateISO ? dayjs(s.milestoneDateISO).valueOf() : Infinity
+    }))
+    return withRank.sort((a,b) => a.__rank - b.__rank)
+  }, [sets])
 
-  // ---- create & edit set
-  const createSet = async () => {
-    const gs = { id: crypto.randomUUID(), name: formSet.name || 'Goal Set', milestoneDate: formSet.milestoneDate }
-    await upsertGoalSet(gs)
-    setSets(prev => [gs, ...prev])
-    setActiveSetId(gs.id)
+  // Group items by set
+  const itemsBySet = useMemo(() => {
+    const map = new Map()
+    for (const it of items) {
+      if (!map.has(it.setId)) map.set(it.setId, [])
+      map.get(it.setId).push(it)
+    }
+    return map
+  }, [items])
+
+  // Handlers — Create/Edit Set
+  const resetSetForm = () => {
+    setEditSetId(null)
+    setSetName('')
+    setSetDateISO('')
+    setSetMode('practice')
   }
-  const updateSet = async () => {
-    if (!activeSet) return
-    const upd = { ...activeSet, name: formSet.name || activeSet.name, milestoneDate: formSet.milestoneDate || activeSet.milestoneDate }
-    await upsertGoalSet(upd)
-    setSets(prev => [upd, ...prev.filter(s => s.id !== upd.id)])
+  const loadSetIntoForm = (s) => {
+    setEditSetId(s.id)
+    setSetName(s.name || '')
+    setSetDateISO(s.milestoneDateISO || '')
+    setSetMode(s.mode || 'practice')
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
-  const removeSet = async () => {
-    if (!activeSet) return
-    await deleteGoalSet(activeSet.id)
-    setSets(prev => prev.filter(s => s.id !== activeSet.id))
-    setItems(prev => prev.filter(it => it.setId !== activeSet.id))
-    setActiveSetId(sets.find(s => s.id !== activeSet.id)?.id || '')
+  const saveSet = async () => {
+    const saved = await upsertGoalSet({
+      id: editSetId || undefined,
+      name: setName.trim(),
+      milestoneDateISO: setSetDateISO || null,
+      mode: setMode
+    })
+    const fresh = await getGoalSets()
+    setSets(fresh)
+    if (!targetSetId) setTargetSetId(saved.id) // pick as default if none
+    resetSetForm()
   }
 
-  // ---- create item
-  const [newItem, setNewItem] = useState({
-    type:'efg_threshold',
-    target:55,
-    comparison:'greater_equal',
-    filter:{ period:'30d', zone:'all', shotType:'any' }
-  })
-  const addItem = async () => {
-    if (!activeSet) return
-    const gi = { id: crypto.randomUUID(), setId: activeSet.id, ...newItem, target: Number(newItem.target) }
-    await upsertGoalItem(gi)
-    setItems(prev => [gi, ...prev])
-  }
-  const removeItem = async (id) => {
-    await deleteGoalItem(id)
-    setItems(prev => prev.filter(x => x.id !== id))
+  // Handlers — Add Goal
+  const addGoal = async () => {
+    if (!targetSetId) return
+    await upsertGoalItem({
+      setId: targetSetId,
+      type: goalType,
+      target: goalTarget ? Number(goalTarget) : 0,
+      // You can map goalDetails into your engine filter shape later
+      filter: { note: goalDetails || undefined }
+    })
+    setItems(await getGoalItems())
+    setGoalTarget('')
+    setGoalDetails('')
   }
 
-  const milestone = activeSet?.milestoneDate
-  const today = dayjs()
-  const daysLeft = milestone ? dayjs(milestone).startOf('day').diff(today.startOf('day'), 'day') : null
-
-  // ---- UI
+  // UI
   return (
-    <div style={{ padding:16, fontFamily:'system-ui, -apple-system, Segoe UI, Roboto', maxWidth:900, margin:'0 auto' }}>
-      <h2>Goal Sets</h2>
+    <div className="mx-auto w-full max-w-[680px] px-3 pb-24 font-[system-ui]">
+      <div className="py-3">
+        <h1 className="text-lg font-semibold">Goal Management</h1>
+      </div>
 
-      <Card>
-        <div style={{ display:'flex', gap:8, alignItems:'center', flexWrap:'wrap' }}>
-          <label>Active Set:{' '}
-            <select value={activeSetId} onChange={e=>setActiveSetId(e.target.value)}>
-              <option value="">— none —</option>
-              {sets.map(s => <option key={s.id} value={s.id}>{s.name} · due {dayjs(s.milestoneDate).format('MMM D, YYYY')}</option>)}
-            </select>
-          </label>
-
-          <button onClick={async ()=>{ await pullAllRemote(); setSets(await getGoalSets()); setItems(await getGoalItems()); }} style={{ padding:'8px 12px', borderRadius:8 }}>
-            Pull from Cloud
-          </button>
-          <button onClick={async ()=>{ await pushAllLocal(); }} style={{ padding:'8px 12px', borderRadius:8 }}>
-            Push to Cloud
-          </button>
-        </div>
-      </Card>
-
-      <Card>
-        <h3 style={{ marginTop:0 }}>Create / Edit Set</h3>
-        <div style={{ display:'grid', gridTemplateColumns:'1fr 200px 140px', gap:8 }}>
-          <input placeholder="Set name (e.g., Preseason Block)" value={formSet.name} onChange={e=>setFormSet({...formSet, name:e.target.value})} />
-          <input type="date" value={formSet.milestoneDate} onChange={e=>setFormSet({...formSet, milestoneDate:e.target.value})} />
-          <button onClick={createSet}>Create Set</button>
-        </div>
-
-        {activeSet && (
-          <div style={{ marginTop:10, display:'grid', gridTemplateColumns:'1fr 200px 140px 120px', gap:8 }}>
-            <input placeholder="Rename active set" defaultValue={activeSet.name} onChange={e=>setFormSet({...formSet, name:e.target.value})} />
-            <input type="date" defaultValue={activeSet.milestoneDate} onChange={e=>setFormSet({...formSet, milestoneDate:e.target.value})} />
-            <button onClick={updateSet}>Save Changes</button>
-            <button onClick={removeSet} style={{ background:'#fee2e2' }}>Delete Set</button>
-          </div>
-        )}
-
-        {activeSet && (
-          <div style={{ marginTop:8, fontSize:12, color:'#475569' }}>
-            Milestone: <b>{dayjs(activeSet.milestoneDate).format('MMM D, YYYY')}</b> · {daysLeft !== null ? (daysLeft >= 0 ? `${daysLeft} days left` : `${Math.abs(daysLeft)} days past`) : ''}
-          </div>
-        )}
-      </Card>
-
-      {activeSet && (
-        <Card>
-          <h3 style={{ marginTop:0 }}>Add Goal to Set</h3>
-          <div style={{ display:'grid', gridTemplateColumns:'220px 120px 160px 1fr 120px', gap:8, alignItems:'center' }}>
+      {/* 1) Create/Edit Goal Set */}
+      <Section title="Create New Goal Set">
+        <div className="space-y-2">
+          <input
+            className="w-full rounded border px-3 py-2 text-sm"
+            placeholder="Set name (e.g., Preseason Block)"
+            value={setName}
+            onChange={e => setSetName(e.target.value)}
+          />
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             <select
-              value={newItem.type}
-              onChange={e=>{
-                const t = e.target.value
-                const preset = (GOAL_TYPES.find(g=>g.id===t)?.preset) || {}
-                setNewItem(ni=>({ ...ni, type:t, filter:{ ...ni.filter, ...preset.filter } }))
-              }}
+              className="w-full rounded border px-3 py-2 text-sm"
+              value={setMode}
+              onChange={e => setSetMode(e.target.value)}
             >
-              {GOAL_TYPES.map(g => <option key={g.id} value={g.id}>{g.label}</option>)}
+              <option value="practice">Practice</option>
+              <option value="game">Game</option>
             </select>
-
-            <input type="number" value={newItem.target} onChange={e=>setNewItem({...newItem, target:e.target.value})} />
-            <select value={newItem.comparison} onChange={e=>setNewItem({...newItem, comparison:e.target.value})}>
-              <option value="greater_equal">≥ target</option>
-              <option value="less_equal">≤ target</option>
-              <option value="equal">= target</option>
-            </select>
-
-            {/* Filters */}
-            <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
-              <label>Period:
-                <select value={newItem.filter.period ?? '30d'} onChange={e=>setNewItem({...newItem, filter:{...newItem.filter, period:e.target.value}})}>
-                  <option value="7d">7d</option>
-                  <option value="30d">30d</option>
-                  <option value="365d">365d</option>
-                  <option value="all">All</option>
-                </select>
-              </label>
-              <label>Zone:
-                <select value={newItem.filter.zone ?? 'all'} onChange={e=>setNewItem({...newItem, filter:{...newItem.filter, zone:e.target.value}})}>
-                  <option value="all">All</option>
-                  {ZONES.map(z => <option key={z.id} value={z.id}>{z.label}</option>)}
-                </select>
-              </label>
-              <label>Shot:
-                <select value={newItem.filter.shotType ?? 'any'} onChange={e=>setNewItem({...newItem, filter:{...newItem.filter, shotType:e.target.value}})}>
-                  <option value="any">Any</option>
-                  {SHOT_TYPES.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
-                </select>
-              </label>
-              <label>Pressured:
-                <select value={(newItem.filter.pressured ?? 'any').toString()} onChange={e=>{
-                  const v = e.target.value === 'any' ? null : (e.target.value === 'true')
-                  setNewItem({...newItem, filter:{...newItem.filter, pressured:v}})
-                }}>
-                  <option value="any">Any</option>
-                  <option value="true">Yes</option>
-                  <option value="false">No</option>
-                </select>
-              </label>
-            </div>
-
-            <button onClick={addItem}>Add Goal</button>
+            <input
+              type="date"
+              className="w-full rounded border px-3 py-2 text-sm"
+              value={setDateISO}
+              onChange={e => setSetDateISO(e.target.value)}
+            />
           </div>
-        </Card>
-      )}
 
-      {activeSet && (
-        <Card>
-          <h3 style={{ marginTop:0 }}>Goals in “{activeSet.name}”</h3>
-          {activeItems.length === 0 && <div>No goals yet.</div>}
-          {activeItems.map(item => {
-            const res = evaluateGoal(entries, item, activeSet.milestoneDate)
-            const pct = isFinite(res.pctToTarget) ? res.pctToTarget : 0
+          <div className="flex gap-2 pt-1">
+            <button
+              className="ml-auto rounded bg-blue-600 text-white px-3 py-1.5 text-sm"
+              onClick={saveSet}
+            >
+              {editSetId ? 'Save Set' : 'Create Set'}
+            </button>
+            {editSetId &&
+              <button className="rounded border px-3 py-1.5 text-sm" onClick={resetSetForm}>
+                Cancel
+              </button>}
+          </div>
+        </div>
+      </Section>
+
+      {/* 2) Add Goal to Set */}
+      <Section title="Add Goal to Set">
+        <div className="space-y-2">
+          <select
+            className="w-full rounded border px-3 py-2 text-sm"
+            value={targetSetId}
+            onChange={e => setTargetSetId(e.target.value)}
+          >
+            {sortedSets.map(s => (
+              <option key={s.id} value={s.id}>
+                {s.name} {s.mode ? `(${s.mode})` : ''}
+              </option>
+            ))}
+          </select>
+
+          <input
+            className="w-full rounded border px-3 py-2 text-sm"
+            placeholder="Goal Name (optional note)"
+            value={goalDetails}
+            onChange={e => setGoalDetails(e.target.value)}
+          />
+
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            <select
+              className="w-full rounded border px-3 py-2 text-sm"
+              value={goalType}
+              onChange={e => setGoalType(e.target.value)}
+            >
+              {GOAL_TYPES.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
+            </select>
+            <input
+              className="w-full rounded border px-3 py-2 text-sm"
+              placeholder="Target Value (e.g., 42)"
+              inputMode="decimal"
+              value={goalTarget}
+              onChange={e => setGoalTarget(e.target.value)}
+            />
+          </div>
+
+          <button
+            className="w-full rounded bg-blue-600 text-white px-3 py-2 text-sm"
+            onClick={addGoal}
+          >
+            Add Goal
+          </button>
+        </div>
+      </Section>
+
+      {/* 3) Active Goal Sets (sorted by due date, grouped goals, pencil edit) */}
+      <Section title="Active Goal Sets">
+        <div className="space-y-3">
+          {sortedSets.map(s => {
+            const due = dueMeta(s.milestoneDateISO)
+            const sItems = itemsBySet.get(s.id) || []
+
             return (
-              <div key={item.id} style={{ display:'grid', gridTemplateColumns:'1fr 120px 200px 100px 80px', gap:8, alignItems:'center', padding:'8px 0', borderBottom:'1px solid #f1f5f9' }}>
-                <div>
-                  <div style={{ fontWeight:600 }}>{(GOAL_TYPES.find(g=>g.id===item.type)?.label) || item.type}</div>
-                  <div style={{ fontSize:12, color:'#64748b' }}>
-                    period <b>{item.filter?.period || 'all'}</b>
-                    {item.filter?.zone && item.filter.zone!=='all' ? <> · zone <b>{item.filter.zone}</b></> : null}
-                    {item.filter?.shotType && item.filter.shotType!=='any' ? <> · shot <b>{item.filter.shotType}</b></> : null}
-                    {typeof item.filter?.pressured === 'boolean' ? <> · pressured <b>{item.filter.pressured ? 'yes' : 'no'}</b></> : null}
+              <div key={s.id} className="rounded-xl border border-slate-200">
+                {/* Header row */}
+                <div className="flex items-start justify-between gap-2 p-3">
+                  <div>
+                    <div className="text-sm font-semibold">{s.name || 'Untitled Set'}</div>
+                    <div className="mt-1 flex items-center gap-2 text-xs text-slate-600">
+                      {due && (
+                        <>
+                          <span>📅 {due.label}</span>
+                          <span className="text-slate-400">({due.days} days left)</span>
+                        </>
+                      )}
+                      <Badge>{(s.mode || 'practice').replace(/^\w/, c => c.toUpperCase())}</Badge>
+                    </div>
                   </div>
+                  <button
+                    className="shrink-0 p-1 text-slate-600 hover:text-slate-900"
+                    aria-label="Edit set"
+                    onClick={() => loadSetIntoForm(s)}
+                  >
+                    <Pencil />
+                  </button>
                 </div>
 
-                <div>Target: <b>{item.target}</b></div>
+                {/* Goals list */}
+                <div className="border-t border-slate-100">
+                  {sItems.length === 0 && (
+                    <div className="p-3 text-xs text-slate-500">No goals yet.</div>
+                  )}
 
-                <div>
-                  <div style={{ height:10, background:'#e5e7eb', borderRadius:6, overflow:'hidden' }}>
-                    <div style={{ width:`${Math.min(100, pct)}%`, height:'100%', background: res.met ? '#22c55e' : '#0ea5e9' }} />
-                  </div>
-                  <div style={{ fontSize:12, color:'#64748b' }}>
-                    Value: <b>{Number(res.value).toFixed(1)}</b> · {res.met ? '✅ Met' : '⏳ In progress'}
-                  </div>
+                  {sItems.map(it => {
+                    const typeMeta = GOAL_TYPES.find(t => t.id === it.type)
+                    const unit = typeMeta?.unit || ''
+                    // Optional: evaluate current value to render a progress bar
+                    // (You can wire evaluateGoal here with your entries.)
+                    return (
+                      <div key={it.id} className="flex items-start justify-between gap-3 p-3">
+                        <div className="min-w-0">
+                          <div className="text-sm font-medium">
+                            {typeMeta?.label || it.type}
+                            {unit && <span className="ml-1 text-xs text-slate-500">({unit})</span>}
+                          </div>
+                          {it.filter?.note && (
+                            <div className="text-xs text-slate-500 mt-0.5">{it.filter.note}</div>
+                          )}
+                        </div>
+                        <div className="shrink-0 flex items-center gap-2">
+                          <button
+                            className="rounded border px-2 py-1 text-xs"
+                            onClick={async () => {
+                              // (Optionally load into a goal edit modal—kept minimal here)
+                              // noop: placeholder for edit flow
+                              alert('Editing individual Goal not implemented yet.')
+                            }}
+                          >Edit</button>
+                          <button
+                            className="rounded bg-rose-600 text-white px-2 py-1 text-xs"
+                            onClick={async () => { await deleteGoalItem(it.id); setItems(await getGoalItems()) }}
+                          >Delete</button>
+                        </div>
+                      </div>
+                    )
+                  })}
                 </div>
-
-                <button onClick={async ()=>{ 
-                  const target = Number(prompt('New target?', item.target))
-                  if (!Number.isFinite(target)) return
-                  const updated = { ...item, target }
-                  await upsertGoalItem(updated)
-                  setItems(prev => [updated, ...prev.filter(x => x.id !== updated.id)])
-                }}>Edit</button>
-
-                <button onClick={()=>removeItem(item.id)} style={{ background:'#fee2e2' }}>Delete</button>
               </div>
             )
           })}
-        </Card>
-      )}
+        </div>
+      </Section>
     </div>
   )
 }

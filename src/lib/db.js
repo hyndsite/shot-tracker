@@ -27,25 +27,44 @@ export async function addMarker(m) {
 export async function getGoalSets()    { return (await get(KEYS.goalSets)) ?? [] }
 export async function getGoalItems()   { return (await get(KEYS.goalItems)) ?? [] }
 
-export async function upsertGoalSet(gs) {
-  await update(KEYS.goalSets, (arr=[]) => {
-    const others = arr.filter(x => x.id !== gs.id)
-    return [gs, ...others]
+export async function upsertGoalSet(set) {
+  // set: { id?, name, milestoneDateISO, mode: 'practice'|'game' }
+  const incoming = { ...set }
+  if (!incoming.id) incoming.id = crypto.randomUUID()
+  if (!incoming.mode) incoming.mode = 'practice' // default safeguard
+  await update(KEYS.goalSets, (arr = []) => {
+    const without = arr.filter(x => x.id !== incoming.id)
+    return [incoming, ...without] // newest first
   })
-}
-export async function deleteGoalSet(setId) {
-  await update(KEYS.goalSets, (arr=[]) => arr.filter(x => x.id !== setId))
-  await update(KEYS.goalItems, (arr=[]) => arr.filter(x => x.setId !== setId))
+  return incoming
 }
 
-export async function upsertGoalItem(gi) {
-  await update(KEYS.goalItems, (arr=[]) => {
-    const others = arr.filter(x => x.id !== gi.id)
-    return [gi, ...others]
-  })
+export async function deleteGoalSet(id) {
+  await update(KEYS.goalSets, (arr = []) => arr.filter(s => s.id !== id))
+  // Optionally cascade remove items in this set:
+  await update(KEYS.goalItems, (arr = []) => arr.filter(it => it.setId !== id))
 }
+
+export async function upsertGoalItem(item) {
+  // item: { id?, setId, type, target, comparison?, filter? }
+  const incoming = { comparison: 'greater_equal', ...item }
+  if (!incoming.id) incoming.id = crypto.randomUUID()
+  await update(KEYS.goalItems, (arr = []) => {
+    const without = arr.filter(x => x.id !== incoming.id)
+    return [incoming, ...without]
+  })
+  return incoming
+}
+
 export async function deleteGoalItem(itemId) {
-  await update(KEYS.goalItems, (arr=[]) => arr.filter(x => x.id !== itemId))
+  await update(KEYS.goalItems, (arr = []) => arr.filter(x => x.id !== itemId))
+}
+
+// --- One-time migration: add 'mode' to existing sets if missing ---
+export async function migrateGoalSets_AddMode() {
+  await update(KEYS.goalSets, (arr = []) =>
+    arr.map(s => (s.mode ? s : { ...s, mode: 'practice' }))
+  )
 }
 
 /* Utilities */
